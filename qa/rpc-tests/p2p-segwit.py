@@ -226,8 +226,8 @@ class SegWitTest(BitcoinTestFramework):
 
     ''' Individual tests '''
     def test_witness_services(self):
-        print("\tVerifying NODE_WITNESS service bit")
-        assert((self.test_node.connection.nServices & NODE_WITNESS) != 0)
+        print("\tVerifying NODE_WITNESS2X service bit")
+        assert((self.test_node.connection.nServices & NODE_WITNESS2X) != 0)
 
 
     # See if sending a regular transaction works, and create a utxo
@@ -901,7 +901,7 @@ class SegWitTest(BitcoinTestFramework):
         tx_hash = tx.sha256
         tx_value = tx.vout[0].nValue
 
-        # Verify that if a peer doesn't set nServices to include NODE_WITNESS,
+        # Verify that if a peer doesn't set nServices to include NODE_WITNESS2X,
         # the getdata is just for the non-witness portion.
         self.old_node.announce_tx_and_wait_for_getdata(tx)
         assert(self.old_node.last_getdata.inv[0].type == 1)
@@ -1023,7 +1023,7 @@ class SegWitTest(BitcoinTestFramework):
         self.utxo.append(UTXO(tx3.sha256, 0, tx3.vout[0].nValue))
 
 
-    # Test that block requests to NODE_WITNESS peer are with MSG_WITNESS_FLAG
+    # Test that block requests to NODE_WITNESS2X peer are with MSG_WITNESS_FLAG
     # This is true regardless of segwit activation.
     # Also test that we don't ask for blocks from unupgraded peers
     def test_block_relay(self, segwit_activated):
@@ -1031,7 +1031,7 @@ class SegWitTest(BitcoinTestFramework):
 
         blocktype = 2|MSG_WITNESS_FLAG
 
-        # test_node has set NODE_WITNESS, so all getdata requests should be for
+        # test_node has set NODE_WITNESS2X, so all getdata requests should be for
         # witness blocks.
         # Test announcing a block via inv results in a getdata, and that
         # announcing a version 4 or random VB block with a header results in a getdata
@@ -1954,16 +1954,16 @@ class SegWitTest(BitcoinTestFramework):
 
     def run_test(self):
         # Setup the p2p connections and start up the network thread.
-        self.test_node = TestNode() # sets NODE_WITNESS|NODE_NETWORK
+        self.test_node = TestNode() # sets NODE_WITNESS2X|NODE_NETWORK
         self.old_node = TestNode()  # only NODE_NETWORK
         self.std_node = TestNode() # for testing node1 (fRequireStandard=true)
 
         self.p2p_connections = [self.test_node, self.old_node]
 
         self.connections = []
-        self.connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], self.test_node, services=NODE_NETWORK|NODE_WITNESS))
+        self.connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], self.test_node, services=NODE_NETWORK|NODE_WITNESS2X))
         self.connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], self.old_node, services=NODE_NETWORK))
-        self.connections.append(NodeConn('127.0.0.1', p2p_port(1), self.nodes[1], self.std_node, services=NODE_NETWORK|NODE_WITNESS))
+        self.connections.append(NodeConn('127.0.0.1', p2p_port(1), self.nodes[1], self.std_node, services=NODE_NETWORK|NODE_WITNESS2X))
         self.test_node.add_connection(self.connections[0])
         self.old_node.add_connection(self.connections[1])
         self.std_node.add_connection(self.connections[2])
@@ -1978,7 +1978,7 @@ class SegWitTest(BitcoinTestFramework):
 
         print("\nStarting tests before segwit lock in:")
 
-        self.test_witness_services() # Verifies NODE_WITNESS
+        self.test_witness_services() # Verifies NODE_WITNESS2X
         self.test_non_witness_transaction() # non-witness tx's are accepted
         self.test_unnecessary_witness_before_segwit_activation()
         self.test_block_relay(segwit_activated=False)
