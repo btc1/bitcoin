@@ -684,26 +684,43 @@ BOOST_AUTO_TEST_CASE(test_tx_sizelimits)
     tx.vout[0].scriptPubKey = CScript();
 
     size_t sersizeTx = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
-
     BOOST_CHECK(sersizeTx <= MAX_TX_BASE_SIZE);
-
     CValidationState state;
     BOOST_CHECK_MESSAGE(CheckTransaction(tx, state) && state.IsValid(), "Simple transaction should be valid.");
 
     const size_t nTestOutputs = 125000;
     tx.vout.resize(nTestOutputs);
-
     for (size_t i = 0; i < nTestOutputs; i++) {
         tx.vout[i].nValue = 1;
         tx.vout[i].scriptPubKey = CScript();
     }
-
     sersizeTx = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
-
     BOOST_CHECK(sersizeTx > MAX_TX_BASE_SIZE);
-
     BOOST_CHECK_MESSAGE(!CheckTransaction(tx, state) || !state.IsValid(), "Large transaction should be invalid.");
 
+    //*** Check the edge cases
+
+    //   Max Txs (Valid)
+    const size_t nMaxOutputs = MAX_TX_BASE_SIZE / 9;
+    tx.vout.resize(nMaxOutputs);
+    for (size_t i = 0; i < nMaxOutputs; i++) {
+        tx.vout[i].nValue = 1;
+        tx.vout[i].scriptPubKey = CScript();
+    }
+    sersizeTx = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
+    BOOST_CHECK(sersizeTx <= MAX_TX_BASE_SIZE);
+    BOOST_CHECK_MESSAGE(!CheckTransaction(tx, state) || !state.IsValid(), "Largest transaction that should be valid.");
+
+    //   Max Tx + 1 (Invalid)
+    const size_t nMaxOutputsPlusOne = nMaxOutputs + 1;
+    tx.vout.resize(nMaxOutputsPlusOne);
+    for (size_t i = 0; i < nMaxOutputsPlusOne; i++) {
+        tx.vout[i].nValue = 1;
+        tx.vout[i].scriptPubKey = CScript();
+    }
+    sersizeTx = ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
+    BOOST_CHECK(sersizeTx > MAX_TX_BASE_SIZE);
+    BOOST_CHECK_MESSAGE(!CheckTransaction(tx, state) || !state.IsValid(), "Smallest transaction that should be invalid.");
 }
 
 BOOST_AUTO_TEST_CASE(test_IsStandard)
