@@ -22,7 +22,7 @@ static inline bool BIP102active(bool fSegwitSeasoned)
 }
 
 static const unsigned int MAX_LEGACY_BLOCK_SIZE = (1 * 1000 * 1000);
-inline unsigned int MaxBlockBaseSize(bool fSegwitSeasoned)
+inline unsigned int MaxBlockBaseSize(int nHeight, bool fSegwitSeasoned)
 {
     if (!BIP102active(fSegwitSeasoned))
         return MAX_LEGACY_BLOCK_SIZE;
@@ -38,7 +38,7 @@ inline unsigned int MaxBlockBaseSize()
 
 /** The maximum allowed number of signature check operations in a block (network rule) */
 static const uint64_t MAX_BLOCK_BASE_SIGOPS = 20000;
-inline int64_t MaxBlockSigOpsCost( bool fSegwitSeasoned)
+inline int64_t MaxBlockSigOpsCost(int nHeight, bool fSegwitSeasoned)
 {
     if (!BIP102active(fSegwitSeasoned))
         return (MAX_BLOCK_BASE_SIGOPS * 4 /* WITNESS_SCALE_FACTOR */);
@@ -52,9 +52,9 @@ inline int64_t MaxBlockSigOpsCost()
 }
 
 /** The maximum allowed weight for a block, see BIP 141 (network rule) */
-inline unsigned int MaxBlockWeight(bool fSegwitSeasoned)
+inline unsigned int MaxBlockWeight(int nHeight, bool fSegwitSeasoned)
 {
-    return (MaxBlockBaseSize(fSegwitSeasoned) * 4 /* WITNESS_SCALE_FACTOR */);
+    return (MaxBlockBaseSize(nHeight, fSegwitSeasoned) * 4 /* WITNESS_SCALE_FACTOR */);
 }
 
 inline unsigned int MaxBlockWeight()
