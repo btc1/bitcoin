@@ -1874,7 +1874,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     bool fSegWitProtectBlock = (nHeight + 1 == VersionBitsTipStateSinceHeight(consensusParams, Consensus::DEPLOYMENT_SEGWIT) + consensusParams.nSegWit2xHFActivationIndex);
     // Only check if SegWit deployment is transitioning from LOCKED_IN to ACTIVE or if it's ACTIVE and we're expecting to protect this block
     if ((fSegWitInitiating || fSegWitActive) && fSegWitProtectBlock &&
-        ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) <= MaxBlockBaseSize(nHeight, false))
+        ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) <= MaxBlockBaseSize(nHeight + 1, false))
     {
             return state.DoS(0, error("ConnectBlock(): relayed block must meet SegWit2x minimum block size"), REJECT_INVALID, "bad-no-segwit2x");
     }
