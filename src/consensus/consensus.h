@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 /** BIP102 block size increase height */
-static const unsigned int BIP102_FORK_MIN_HEIGHT = 485218;
 static const unsigned int BIP102_FORK_BUFFER = (144 * 90);
 
 /** The maximum allowed size for a serialized block, in bytes (only for buffer size limits) */
@@ -19,9 +18,6 @@ static const unsigned int MAX_BLOCK_SERIALIZED_SIZE = (8 * 1000 * 1000);
 static inline bool BIP102active(int nHeight, bool fSegwitSeasoned)
 {
     if (!fSegwitSeasoned)
-        return false;
-
-    if (nHeight < (int)BIP102_FORK_MIN_HEIGHT)
         return false;
 
     return true;
