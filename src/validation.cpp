@@ -1862,6 +1862,23 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         }
     }
 
+    // Check for a mandatory 1mb+ block with regards to SegWit2x (DEPLOYMENT_SEGWIT) activation after X (consensusParams.nSegWit2xHFActivationIndex) blocks
+    const Consensus::Params& consensusParams = chainparams.GetConsensus();
+    int nHeight = chainActive.Tip()->nHeight;
+    // Check if DEPLOYMENT_SEGWIT was active in the last valid block
+    bool fSegWitActive = (VersionBitsState(pindex->pprev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+    // Check if DEPLOYMENT_SEGWIT activates in the block we are receiving
+    bool fSegWitInitiating = (!fSegWitActive && (VersionBitsState(pindex, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE)
+        && (VersionBitsState(pindex->pprev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_LOCKED_IN));
+    // Check if the receiving block must be larger than legacy
+    bool fSegWitProtectBlock = (nHeight + 1 == VersionBitsTipStateSinceHeight(consensusParams, Consensus::DEPLOYMENT_SEGWIT) + consensusParams.nSegWit2xHFActivationIndex);
+    // Only check if SegWit deployment is transitioning from LOCKED_IN to ACTIVE or if it's ACTIVE and we're expecting to protect this block
+    if ((fSegWitInitiating || fSegWitActive) && fSegWitProtectBlock &&
+        ::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) <= MaxBlockBaseSize(nHeight, false))
+    {
+            return state.DoS(0, error("ConnectBlock(): relayed block must meet SegWit2x minimum block size"), REJECT_INVALID, "bad-no-segwit2x");
+    }
+
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
     LogPrint("bench", "    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
 
