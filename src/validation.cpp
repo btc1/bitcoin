@@ -3088,6 +3088,22 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
         }
     }
 
+    // Only one transaction's base size is allowed to exceed 100kb once
+    // the hardfork is activated. This exists as an extra failsafe for
+    // the O(n^2) sighashing problem. Note that the coinbase transaction
+    // is not affected by this limit.
+    if (BIP102active(nHeight, fSegwitSeasoned)) {
+        bool fSeenMaxSize = false;
+        for (size_t i = 1; i < block.vtx.size(); i++) {
+            const CTransaction &tx = *(block.vtx[i]);
+            if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) > 100000) {
+                if (fSeenMaxSize)
+                    return state.DoS(100, false, REJECT_INVALID, "bad-tx-length", false, "tx size limit exceeded");
+                fSeenMaxSize = true;
+            }
+        }
+    }
+
     unsigned int nSigOps = 0;
     for (const auto& tx : block.vtx)
     {
