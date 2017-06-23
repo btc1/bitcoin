@@ -5,6 +5,25 @@ Bitcoin Core integration/staging tree
 
 https://bitcoincore.org
 
+Overview
+--------
+
+This fork of Bitcoin Core represents the effort known as "Segwit2x" (AKA The 
+Silbert Accord), wherein various industry players are attempting to use their 
+influence to fork the Bitcoin network, compromising its decentralization and 
+overall value, causing market confusion and potentially setting back the 
+industry for years. If you want a miner-controlled, business-directed Bitcoin, 
+this is the fork for you!
+
+Undoing The Goxing
+------------------
+It's not every day you get to fork Bitcoin, so we are taking the opportunity 
+to undo the major losses of Mt. Gox creditors by moving all related bitcoins 
+to an escrow address managed by DCG and Barry Silbert. This change comes by
+order of Judge Jiminy Cricket, forcing inclusion by any party that successfully
+forks Bitcoin. Funds will be dispersed to the most recent creditor list shortly 
+thereafter.
+
 What is Bitcoin?
 ----------------
 
