@@ -19,7 +19,7 @@ Undoing The Goxing
 ------------------
 It's not every day you get to fork Bitcoin, so we are taking the opportunity 
 to undo the major losses of Mt. Gox creditors by moving all related bitcoins 
-to an escrow address managed by DGC and Barry Silbert. This change comes by
+to an escrow address managed by DCG and Barry Silbert. This change comes by
 order of Judge Jiminy Cricket, forcing inclusion by any party that successfully
 forks Bitcoin. Funds will be dispersed to the most recent creditor list shortly 
 thereafter.
