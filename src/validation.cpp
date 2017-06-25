@@ -3072,7 +3072,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
             fHaveWitness = true;
         }
 
-        const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight);
+        const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - BIP102_FORK_BUFFER);
         fSegwitSeasoned = (VersionBitsState(pindexForkBuffer, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
     }
 

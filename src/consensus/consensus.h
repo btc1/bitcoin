@@ -8,6 +8,9 @@
 
 #include <stdint.h>
 
+-/** BIP102 3 month delay */
+ -static const unsigned int BIP102_FORK_BUFFER = (144 * 90);
+
 
 /** The maximum allowed size for a serialized block, in bytes (only for buffer size limits) */
 static const unsigned int MAX_BLOCK_SERIALIZED_SIZE = (8 * 1000 * 1000);
