@@ -231,6 +231,57 @@ BOOST_AUTO_TEST_CASE(versionbits_test)
     }
 }
 
+
+BOOST_AUTO_TEST_CASE(versionbits_segwit2x)
+{
+    // Test sequence for segwit2x deployment
+    // simulates 100% signaling
+
+    const Consensus::Params &params = Params(CBaseChainParams::MAIN).GetConsensus();
+    VersionBitsCache cache;
+
+    int64_t nTime = params.vDeployments[Consensus::DEPLOYMENT_SEGWIT2X].nStartTime +1;
+
+    // Stage 1 with an 2016 non-signaling to ensure starttime is achieved;
+    VersionBitsTester chain;
+    auto lastBlock = chain.Mine(2016, nTime, VERSIONBITS_TOP_BITS).Tip();
+
+
+    // mine a lot of blocks;
+    for(int i=2016; i < 20000; i++)
+    {
+        int32_t version = ComputeBlockVersion(lastBlock, params);
+        lastBlock = chain.Mine(i, nTime, version).Tip();
+
+        // Signal Segwit2X until segwit is seasoned (AFTER 2*2016 blocks SegWit activation and 144*90 seasoning blocks)
+        BOOST_CHECK_EQUAL(i >= 2016 && i < 2016*3 + 144 * 90, (version & VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT2X))> 0);
+
+        // Signal Segwit until segwit active (after 2016 blocks STARTED and 2016 blocks LOCKED_IN)
+        BOOST_CHECK_EQUAL(i >= 2016 && i <= 2016 * 3, (version & VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT))> 0);
+
+        // Segwit state flow
+        BOOST_CHECK_EQUAL(i >= 2016     && i < 2016 * 2, VersionBitsState(lastBlock, params, Consensus::DEPLOYMENT_SEGWIT,   cache) == THRESHOLD_STARTED);
+        BOOST_CHECK_EQUAL(i >= 2016 * 2 && i < 2016 * 3, VersionBitsState(lastBlock, params, Consensus::DEPLOYMENT_SEGWIT,   cache) == THRESHOLD_LOCKED_IN);
+        BOOST_CHECK_EQUAL(i >= 2016 * 3                , VersionBitsState(lastBlock, params, Consensus::DEPLOYMENT_SEGWIT,   cache) == THRESHOLD_ACTIVE);
+
+        // Segwit2x state flow
+        BOOST_CHECK_EQUAL(i >= 2016           && i < 2016 + 336    , VersionBitsState(lastBlock, params, Consensus::DEPLOYMENT_SEGWIT2X,   cache) == THRESHOLD_STARTED);
+        BOOST_CHECK_EQUAL(i >= 2016 + 336     && i < 2016 + 336 * 2, VersionBitsState(lastBlock, params, Consensus::DEPLOYMENT_SEGWIT2X,   cache) == THRESHOLD_LOCKED_IN);
+        BOOST_CHECK_EQUAL(i >= 2016 + 336 * 2                      , VersionBitsState(lastBlock, params, Consensus::DEPLOYMENT_SEGWIT2X,   cache) == THRESHOLD_ACTIVE);
+
+
+        // Non Segwit blocks should be rejected between segwit2x activation and segwit lock_in
+        int32_t versionNonSegwit = VERSIONBITS_TOP_BITS | VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT2X);
+        BOOST_CHECK_EQUAL(i >= 2016 + 336* 2  && i < 2016 * 2       , !IsSegWitSignaledIfRequired(lastBlock, versionNonSegwit, params));
+
+        // Non Segwit2X blocks should be rejected between segwit2x activation and segwit seasoning
+        int32_t versionNonSegwit2X = VERSIONBITS_TOP_BITS | VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT);
+        bool fSegwitSeasoned =  i >= 2016 * 3 + 144 * 90;
+        BOOST_CHECK_EQUAL(i >= 2016 + 336* 2  && i < 2016 * 3 + 144 * 90, !IsSegWit2XSignaledIfRequired(lastBlock, versionNonSegwit2X, params, fSegwitSeasoned));
+    }
+
+}
+
 BOOST_AUTO_TEST_CASE(versionbits_computeblockversion)
 {
     // Check that ComputeBlockVersion will set the appropriate bit correctly

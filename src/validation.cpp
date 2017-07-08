@@ -1695,6 +1695,14 @@ int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Para
         if (state == THRESHOLD_LOCKED_IN || state == THRESHOLD_STARTED) {
             nVersion |= VersionBitsMask(params, (Consensus::DeploymentPos)i);
         }
+
+    }
+
+    // Keep signaling Segwit2X until SegWit is seasoned
+    if (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT2X, versionbitscache) == THRESHOLD_ACTIVE
+        && !IsWitnessSeasoned(pindexPrev, params))
+    {
+        nVersion |= VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT2X);
     }
 
     return nVersion;
@@ -1854,15 +1862,14 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     // SEGWIT2X signalling.
-    if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT2X, versionbitscache) == THRESHOLD_ACTIVE &&
-        VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT,    versionbitscache) == THRESHOLD_STARTED)
-    {
-        bool fVersionBits = (pindex->nVersion & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS;
-        bool fSegbit = (pindex->nVersion & VersionBitsMask(chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT)) != 0;
-        if (!(fVersionBits && fSegbit)) {
-            return state.DoS(0, error("ConnectBlock(): relayed block must signal for segwit, please upgrade"), REJECT_INVALID, "bad-no-segwit");
-        }
+    if (!IsSegWitSignaledIfRequired(pindex->pprev, pindex->nVersion, chainparams.GetConsensus())) {
+        return state.DoS(0, error("ConnectBlock(): relayed block must signal for segwit, please upgrade"), REJECT_INVALID, "bad-no-segwit");
     }
+
+    if (!IsSegWit2XSignaledIfRequired(pindex->pprev, pindex->nVersion, chainparams.GetConsensus(), fSegwitSeasoned)) {
+        return state.DoS(0, error("ConnectBlock(): relayed block must signal for segwit, please upgrade"), REJECT_INVALID, "bad-no-segwit");
+    }
+
 
     int64_t nTime2 = GetTimeMicros(); nTimeForks += nTime2 - nTime1;
     LogPrint("bench", "    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
@@ -2941,6 +2948,41 @@ bool IsWitnessSeasoned(const CBlockIndex* pindexPrev, const Consensus::Params& p
     const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - params.BIP102HeightDelta);
 
     return (VersionBitsState(pindexForkBuffer, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+}
+
+
+// Check if the version is correctly signaling SegWit if it needs to by BIP91 rules
+bool IsSegWitSignaledIfRequired(const CBlockIndex* pindexPrev, int32_t version, const Consensus::Params& params)
+{
+    if (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT2X, versionbitscache) == THRESHOLD_ACTIVE &&
+        VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT,    versionbitscache) == THRESHOLD_STARTED)
+    {
+        bool fVersionBits = (version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS;
+        bool fSegbit = (version & VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT)) != 0;
+
+        if (!(fVersionBits && fSegbit)) {
+            return false;
+        }
+
+    }
+
+    return true;
+}
+
+// Check if the version is correctly signaling SegWit2X if it needs to by BIP91 rules
+bool IsSegWit2XSignaledIfRequired(const CBlockIndex* pindexPrev, int32_t version, const Consensus::Params& params, bool fSegwitSeasoned)
+{
+    if (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT2X, versionbitscache) == THRESHOLD_ACTIVE &&
+        !fSegwitSeasoned)
+    {
+        bool fVersionBits = (version & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS;
+        bool fSegbit2X = (version & VersionBitsMask(params, Consensus::DEPLOYMENT_SEGWIT2X)) != 0;
+
+        if (!(fVersionBits && fSegbit2X)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Compute at which vout of the block's coinbase transaction the witness
