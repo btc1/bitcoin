@@ -37,7 +37,7 @@ class BIP91Test(BitcoinTestFramework):
         NetworkThread().start() # Start up network handling in another thread
         self.tip = int("0x" + self.nodes[0].getbestblockhash(), 0)
         self.height = 1  # height of the next block to build
-        self.last_block_time = int(time.time())
+        self.last_block_time = int(time.time() - 10000)
 
         assert_equal(self.get_bip9_status('segwit2x')['status'], 'defined')
         assert_equal(self.get_bip9_status('segwit2x')['since'], 0)
@@ -102,26 +102,28 @@ class BIP91Test(BitcoinTestFramework):
         assert_equal(self.get_bip9_status('segwit')['status'], 'started')
         assert_equal(self.get_bip9_status('segwit')['since'], 144)
         tmpl = self.nodes[0].getblocktemplate({})
-        assert_equal(tmpl['version'], 0x10000001|0x20000002)
+        assert_equal(tmpl['version'], 0x10000001|0x20000012)
 
         # Test 5
         # bit 1 signalling becomes mandatory after bit 4 is ACTIVE
+        # bit 4 signalling becomes mandatory after bit 4 is ACTIVE
         self.generate_blocks(1, 4, 'bad-no-segwit')
         self.generate_blocks(1, 0x20000000, 'bad-no-segwit')
         self.generate_blocks(1, 0x20000010, 'bad-no-segwit')
         self.generate_blocks(1, 0x40000002, 'bad-no-segwit')
         self.generate_blocks(1, 0x60000002, 'bad-no-segwit')
         self.generate_blocks(1, 0x12, 'bad-no-segwit')
-        self.generate_blocks(35, 0x20000002)
+        self.generate_blocks(1, 0x20000002, 'bad-no-segwit2x')
         self.generate_blocks(35, 0x20000012)
-        self.generate_blocks(73, 0x20000102)
+        self.generate_blocks(35, 0x20000012)
+        self.generate_blocks(73, 0x20000112)
 
         assert_equal(self.get_bip9_status('segwit2x')['status'], 'active')
         assert_equal(self.get_bip9_status('segwit2x')['since'], 288)
         assert_equal(self.get_bip9_status('segwit')['status'], 'started')
         assert_equal(self.get_bip9_status('segwit')['since'], 144)
         tmpl = self.nodes[0].getblocktemplate({})
-        assert_equal(tmpl['version'], 0x10000001|0x20000002)
+        assert_equal(tmpl['version'], 0x10000001|0x20000012)
 
         self.generate_blocks(1, 4, 'bad-no-segwit')
         self.generate_blocks(1, 0x20000000, 'bad-no-segwit')
@@ -129,25 +131,25 @@ class BIP91Test(BitcoinTestFramework):
         self.generate_blocks(1, 0x40000002, 'bad-no-segwit')
         self.generate_blocks(1, 0x60000002, 'bad-no-segwit')
         self.generate_blocks(1, 0x12, 'bad-no-segwit')
-        self.generate_blocks(1, 0x20000002)
+        self.generate_blocks(1, 0x20000002, 'bad-no-segwit2x')
+        self.generate_blocks(1, 0x20000012)
 
         # Test 6
         # bit 1 signalling becomes optional after bit 1 locked_in
+        # bit 4 signalling is still mandatory
 
         assert_equal(self.get_bip9_status('segwit2x')['status'], 'active')
         assert_equal(self.get_bip9_status('segwit2x')['since'], 288)
         assert_equal(self.get_bip9_status('segwit')['status'], 'locked_in')
         assert_equal(self.get_bip9_status('segwit')['since'], 432)
         tmpl = self.nodes[0].getblocktemplate({})
-        assert_equal(tmpl['version'], 0x10000001|0x20000002)
+        assert_equal(tmpl['version'], 0x10000001|0x20000012)
 
-        self.generate_blocks(20, 0x20000002)
+        self.generate_blocks(1, 0x20000002, 'bad-no-segwit2x')
+        self.generate_blocks(1, 0x40000002, 'bad-no-segwit2x')
+
         self.generate_blocks(20, 0x20000012)
-        self.generate_blocks(20, 0x20000102)
-        self.generate_blocks(20, 0x20000000)
-        self.generate_blocks(20, 0x20000010)
-        self.generate_blocks(20, 0x40000002)
-        self.generate_blocks(23, 0x60000002)
+        self.generate_blocks(20, 0x20000012)
 
 
         assert_equal(self.get_bip9_status('segwit2x')['status'], 'active')
@@ -155,7 +157,7 @@ class BIP91Test(BitcoinTestFramework):
         assert_equal(self.get_bip9_status('segwit')['status'], 'locked_in')
         assert_equal(self.get_bip9_status('segwit')['since'], 432)
 
-        self.generate_blocks(1, 4)
+        self.generate_blocks(124, 0x20000010)
 
 
         assert_equal(self.get_bip9_status('segwit2x')['status'], 'active')
@@ -163,16 +165,17 @@ class BIP91Test(BitcoinTestFramework):
         assert_equal(self.get_bip9_status('segwit')['status'], 'active')
         assert_equal(self.get_bip9_status('segwit')['since'], 576)
         tmpl = self.nodes[0].getblocktemplate({})
-        assert_equal(tmpl['version'], 0x10000001|0x20000000)
+        assert_equal(tmpl['version'], 0x10000001|0x20000010)
 
-        self.generate_blocks(1, 0x20000002)
-        self.generate_blocks(1, 0x20000012)
-        self.generate_blocks(1, 0x20000102)
-        self.generate_blocks(1, 0x20000000)
+        self.generate_blocks(1, 0x20000002, 'bad-no-segwit2x')
+        self.generate_blocks(1, 0x20000102, 'bad-no-segwit2x')
+        self.generate_blocks(1, 0x20000000, 'bad-no-segwit2x')
+        self.generate_blocks(1, 0x40000002, 'bad-no-segwit2x')
+        self.generate_blocks(1, 0x60000002, 'bad-no-segwit2x')
         self.generate_blocks(1, 0x20000010)
-        self.generate_blocks(1, 0x40000002)
-        self.generate_blocks(1, 0x60000002)
-        self.generate_blocks(1, 4)
+        self.generate_blocks(1, 0x20000012)
+
+
 
     def generate_blocks(self, number, version, error = None):
         for i in range(number):
@@ -180,7 +183,10 @@ class BIP91Test(BitcoinTestFramework):
             block.nVersion = version
             block.rehash()
             block.solve()
-            assert_equal(self.nodes[0].submitblock(bytes_to_hex_str(block.serialize())), error)
+            bl = self.nodes[0].submitblock(bytes_to_hex_str(block.serialize()))
+            print( bl, error)
+            assert_equal(bl, error)
+
             if (error == None):
                 self.last_block_time += 1
                 self.tip = block.sha256

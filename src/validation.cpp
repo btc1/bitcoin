@@ -1867,7 +1867,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     }
 
     if (!IsSegWit2XSignaledIfRequired(pindex->pprev, pindex->nVersion, chainparams.GetConsensus(), fSegwitSeasoned)) {
-        return state.DoS(0, error("ConnectBlock(): relayed block must signal for segwit, please upgrade"), REJECT_INVALID, "bad-no-segwit");
+        return state.DoS(0, error("ConnectBlock(): relayed block must signal for segwit2x please upgrade"), REJECT_INVALID, "bad-no-segwit2x");
     }
 
 

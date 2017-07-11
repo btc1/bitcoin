@@ -123,7 +123,7 @@ class CompactBlocksTest(BitcoinTestFramework):
 
         # Start up node0 to be a version 1, pre-segwit node.
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, 
-                [["-debug", "-logtimemicros=1", "-bip9params=segwit:0:0", "-blockversion=536870915"], # signal segwit and csv
+                [["-debug", "-logtimemicros=1", "-bip9params=segwit:0:0", "-blockversion=536870931"], # signal segwit and csv
                  ["-debug", "-logtimemicros", "-txindex"]])
         connect_nodes(self.nodes[0], 1)
 
@@ -132,7 +132,7 @@ class CompactBlocksTest(BitcoinTestFramework):
         tip = node.getbestblockhash()
         mtp = node.getblockheader(tip)['mediantime']
         block = create_block(int(tip, 16), create_coinbase(height + 1), mtp + 1)
-        block.nVersion = 4
+        block.nVersion = 0x20000010
         if segwit:
             add_witness_commitment(block)
         block.solve()

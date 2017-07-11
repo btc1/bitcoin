@@ -14,7 +14,8 @@ import random
 from binascii import hexlify
 
 # The versionbit bit used to signal activation of SegWit
-VB_WITNESS_BIT = 1
+VB_WITNESS_BITS = 0x12
+VB_SEGWIT2X_BITS = 0x12
 VB_PERIOD = 144
 VB_ACTIVATION_THRESHOLD = 108
 VB_TOP_BITS = 0x20000000
@@ -208,7 +209,7 @@ class SegWitTest(BitcoinTestFramework):
 
     ''' Helpers '''
     # Build a block on top of node0's tip.
-    def build_next_block(self, nVersion=4):
+    def build_next_block(self, nVersion=VB_TOP_BITS|VB_SEGWIT2X_BITS):
         tip = self.nodes[0].getbestblockhash()
         height = self.nodes[0].getblockcount() + 1
         block_time = self.nodes[0].getblockheader(tip)["mediantime"] + 1
@@ -282,7 +283,7 @@ class SegWitTest(BitcoinTestFramework):
         assert(tx.sha256 != tx.calc_sha256(with_witness=True))
 
         # Construct a segwit-signaling block that includes the transaction.
-        block = self.build_next_block(nVersion=(VB_TOP_BITS|(1 << VB_WITNESS_BIT)))
+        block = self.build_next_block(nVersion=(VB_TOP_BITS|VB_WITNESS_BITS))
         self.update_witness_block_with_transactions(block, [tx])
         # Sending witness data before activation is not allowed (anti-spam
         # rule).
@@ -1042,14 +1043,14 @@ class SegWitTest(BitcoinTestFramework):
         assert(self.test_node.last_getdata.inv[0].type == blocktype)
         self.test_node.test_witness_block(block1, True)
 
-        block2 = self.build_next_block(nVersion=4)
+        block2 = self.build_next_block()
         block2.solve()
 
         self.test_node.announce_block_and_wait_for_getdata(block2, use_header=True)
         assert(self.test_node.last_getdata.inv[0].type == blocktype)
         self.test_node.test_witness_block(block2, True)
 
-        block3 = self.build_next_block(nVersion=(VB_TOP_BITS | (1<<15)))
+        block3 = self.build_next_block(nVersion=(VB_TOP_BITS | (1<<15) | VB_SEGWIT2X_BITS))
         block3.solve()
         self.test_node.announce_block_and_wait_for_getdata(block3, use_header=True)
         assert(self.test_node.last_getdata.inv[0].type == blocktype)
@@ -1703,7 +1704,7 @@ class SegWitTest(BitcoinTestFramework):
             block_version = gbt_results['version']
             # If we're not indicating segwit support, we will still be
             # signalling for segwit activation.
-            assert_equal((block_version & (1 << VB_WITNESS_BIT) != 0), node == self.nodes[0])
+            assert_equal(((block_version & VB_WITNESS_BITS) != 0), node == self.nodes[0])
             # If we don't specify the segwit rule, then we won't get a default
             # commitment.
             assert('default_witness_commitment' not in gbt_results)
@@ -1723,12 +1724,12 @@ class SegWitTest(BitcoinTestFramework):
             if node == self.nodes[2]:
                 # If this is a non-segwit node, we should still not get a witness
                 # commitment, nor a version bit signalling segwit.
-                assert_equal(block_version & (1 << VB_WITNESS_BIT), 0)
+                assert_equal(block_version & VB_WITNESS_BITS, 0)
                 assert('default_witness_commitment' not in gbt_results)
             else:
                 # For segwit-aware nodes, check the version bit and the witness
                 # commitment are correct.
-                assert(block_version & (1 << VB_WITNESS_BIT) != 0)
+                assert((block_version & VB_WITNESS_BITS) != 0)
                 assert('default_witness_commitment' in gbt_results)
                 witness_commitment = gbt_results['default_witness_commitment']
 
