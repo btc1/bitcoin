@@ -506,6 +506,12 @@ bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& pa
 /** Check whether witness has been activated for 90 days worth of blocks. */
 bool IsWitnessSeasoned(const CBlockIndex* pindexPrev, const Consensus::Params& params);
 
+/** Check if the version is correctly signaling SegWit if it needs to by BIP91 rules **/
+bool IsSegWitSignaledIfRequired(const CBlockIndex* pindexPrev, int32_t version, const Consensus::Params& params);
+
+/** Check if the version is correctly signaling SegWit2X if it needs to by BIP91 rules **/
+bool IsSegWit2XSignaledIfRequired(const CBlockIndex* pindexPrev, int32_t version, const Consensus::Params& params, bool fSegwitSeasoned);
+
 /** When there are blocks in the active chain with missing data, rewind the chainstate and remove them from the block index */
 bool RewindBlockIndex(const CChainParams& params);
 
