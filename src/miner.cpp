@@ -169,7 +169,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // TODO: replace this with a call to main to assess validity of a mempool
     // transaction (which in most cases can be a no-op).
     fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
-    fWitnessSeasoned = IsWitnessSeasoned(pindexPrev, chainparams.GetConsensus());
+    fWitnessSeasoned = IsSegwit2xSeasoned(pindexPrev, chainparams.GetConsensus());
 
     addPriorityTxs();
     int nPackagesSelected = 0;

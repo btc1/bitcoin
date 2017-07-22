@@ -148,7 +148,7 @@ class VersionBitsConditionChecker : public AbstractThresholdConditionChecker {
 private:
     const Consensus::DeploymentPos id;
 
-protected:
+public:
     int64_t BeginTime(const Consensus::Params& params) const { return params.vDeployments[id].nStartTime; }
     int64_t EndTime(const Consensus::Params& params) const { return params.vDeployments[id].nTimeout; }
     int Period(const Consensus::Params& params) const {
@@ -167,11 +167,15 @@ protected:
         return (((pindex->nVersion & VERSIONBITS_TOP_MASK) == VERSIONBITS_TOP_BITS) && (pindex->nVersion & Mask(params)) != 0);
     }
 
-public:
     VersionBitsConditionChecker(Consensus::DeploymentPos id_) : id(id_) {}
     uint32_t Mask(const Consensus::Params& params) const { return ((uint32_t)1) << params.vDeployments[id].bit; }
 };
 
+}
+
+int VersionBitsPeriod(const Consensus::Params& params, Consensus::DeploymentPos pos)
+{
+    return VersionBitsConditionChecker(pos).Period(params);
 }
 
 ThresholdState VersionBitsState(const CBlockIndex* pindexPrev, const Consensus::Params& params, Consensus::DeploymentPos pos, VersionBitsCache& cache)
