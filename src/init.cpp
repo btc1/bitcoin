@@ -371,6 +371,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-dnsseed", _("Query for peer addresses via DNS lookup, if low on addresses (default: 1 unless -connect/-noconnect)"));
     strUsage += HelpMessageOpt("-externalip=<ip>", _("Specify your own public address"));
     strUsage += HelpMessageOpt("-forcednsseed", strprintf(_("Always query for peer addresses via DNS lookup (default: %u)"), DEFAULT_FORCEDNSSEED));
+    strUsage += HelpMessageOpt("-hidesegwit2x", strprintf(_("Hides the NODE_SEGWIT2X service bit for peering purposes (default: %u)"), DEFAULT_HIDESEGWIT2X));
     strUsage += HelpMessageOpt("-listen", _("Accept connections from outside (default: 1 if no -proxy or -connect/-noconnect)"));
     strUsage += HelpMessageOpt("-listenonion", strprintf(_("Automatically create Tor hidden service (default: %d)"), DEFAULT_LISTEN_ONION));
     strUsage += HelpMessageOpt("-maxconnections=<n>", strprintf(_("Maintain at most <n> connections to peers (default: %u)"), DEFAULT_MAX_PEER_CONNECTIONS));
@@ -1050,8 +1051,10 @@ bool AppInitParameterInteraction()
     fAcceptDatacarrier = GetBoolArg("-datacarrier", DEFAULT_ACCEPT_DATACARRIER);
     nMaxDatacarrierBytes = GetArg("-datacarriersize", nMaxDatacarrierBytes);
 
-    // Advertise as segwit2x node
-    nLocalServices = ServiceFlags(nLocalServices | NODE_SEGWIT2X);
+    if (!GetBoolArg("-hidesegwit2x", DEFAULT_HIDESEGWIT2X)) {
+      // Advertise as segwit2x node
+      nLocalServices = ServiceFlags(nLocalServices | NODE_SEGWIT2X);
+    }
 
     // Prefer peers with compatible rulesets
     if (GetBoolArg("-prefpeering", DEFAULT_PREFPEERING)) {
