@@ -171,8 +171,17 @@ do
 done
 
 
+<<<<<<< HEAD
 %clean
 rm -rf %{buildroot}
+=======
+%check
+make check
+srcdir=src test/bitcoin-util-test.py
+test/functional/test_runner.py --extended
+
+%post libs -p /sbin/ldconfig
+>>>>>>> 3751912e8e044958d5ccea847a3f8eab0b026dc1
 
 
 %pre server
