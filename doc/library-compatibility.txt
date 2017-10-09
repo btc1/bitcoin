@@ -1,0 +1,143 @@
+
+The following libraries have been reviewed for compatibility with SegWit2X.
+Specifically, what was looked for was possible issues that may be encountered to
+add 2 MB block support.
+
+
+Libraries:
+
+bitcore-lib:
+    * MAX_BLOCK_SIZE is set to 1000000.
+    * Possible problem: there are multiple MAX_BLOCK_SIZE defined in various
+      places. Ideally, the Once And Only Once principle should be followed.
+    * There's a check in transaction/transaction.js that verifies if the size
+      of a transaction > MAX_BLOCK_SIZE. This is not a problem as long as
+      MAX_BLOCK_SIZE is updated.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+bitcoinjs-lib:
+    Nothing of interest.
+
+bitcoinj:
+    * MAX_BLOCK_SIZE is set to 1 * 1000 * 1000.
+    * Unlike in bitcore-lib, only a single MAX_BLOCK_SIZE is defined.
+    * There are multiple comparisons to MAX_BLOCK_SIZE. Again, this does not
+      pose a problem.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+pycoin:
+    * MAX_BLOCK_SIZE is set to 1000000 and defined in a single place.
+    * MAX_BLOCK_SIZE is only used to copy its value into a MAX_TX_SIZE, which is
+      a member of a Tx class. The value of MAX_TX_SIZE is in turn compared to
+      the size of a transaction and an exception is raised if the transaction is
+      larger than this value.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+python-bitcoinlib:
+    * MAX_BLOCK_SIZE is set to 1000000.
+    * There exist comparisons between MAX_BLOCK_SIZE and the size of blocks and
+      transactions that throw exceptions if they fail.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+bcoin:
+    * MAX_BLOCK_SIZE is set to 1000000.
+    * MAX_BLOCK_SIZE is used in multiple places:
+      * MAX_BLOCK_SIZE / 10 to check the size of a compact block.
+      * To reject large blocks.
+      * It's copied into the 'sizelimit' element of a JSON object that's
+        returned by getBlockTemplate. Incidentally, this element is also
+        sometimes set to MAX_RAW_BLOCK_SIZE, which is set to 4000000.
+    * Some tests hard-code the value of sizelimit to 1000000 or 4000000.
+
+bitcoin-s-core:
+    * maxBlockSize is set to 1000000.
+    * maxBlockSize is used in checkTransaction() to make sure the tx is not
+      larger than the max block size.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+1200wd:
+    * Nothing of interest.
+
+BitWasp:
+    * MAX_BLOCK_SIZE is set to 1000000. Additionally, maxBlockSizeBytes is also
+      defined to the same value.
+    * Both MAX_BLOCK_SIZE and maxBlockSizeBytes are used for various
+      comparisons.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+libbitcoin:
+    * max_block_size is set to 1000000.
+    * max_block_size is used in several places when objects are parsed from
+      buffers to "guard against potential for arbitary memory allocation".
+    * No direct comparisons to other hard-coded block sizes were found.
+
+mSIGNA:
+    * Nothing of interest.
+
+JoinMarket:
+    * Nothing of interest.
+
+libbtc:
+    * Nothing of interest.
+
+NBitcoin:
+    * Transaction.MAX_BLOCK_SIZE is set to 1000000. Additionally,
+      Block.MAX_BLOCK_SIZE is set to 1000 * 1000.
+    * Block.MAX_BLOCK_SIZE is not used anywhere. Transaction.MAX_BLOCK_SIZE is
+      used in Transaction.Check() to discard transactions larger than the
+      maximum block size.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+Bitcoin-ruby:
+    * MAX_BLOCK_SIZE is set to 1_000_000. This constant is only copied to
+      another one, which is not used for anything.
+    * No direct comparisons to other hard-coded block sizes were found.
+
+--------------------------------------------------------------------------------
+
+Wallet software:
+
+airbitz-core-js-ui:
+    * Nothing of interest.
+
+Altana:
+    * Altana copy-pastes some code from Bitcoinj. The notes that applied to
+      Bitcoinj apply to this, as well.
+
+BitcoinArmory:
+    * Nothing of interest.
+
+BitcoinKnots:
+    * MAX_BLOCK_BASE_SIZE is set to 1000000. There is a second, identical
+      definition of MAX_BLOCK_BASE_SIZE in one of the Python tests, although
+      this is somewhat inevitable due to their being different languages.
+    * MAX_BLOCK_BASE_SIZE is used to:
+      * Check the size of compact blocks.
+      * Check the size of a transaction (<=).
+      * getblocktemplate() returns a JSON object that contains sizelimit set to
+        either MAX_BLOCK_BASE_SIZE or MAX_BLOCK_SERIALIZED_SIZE (which is set to
+        4000000), depending on whether segwit has been activated. The value of
+        sizelimit is then compared against 1000000 (hardcoded) in one of the
+        tests, and the test fails if they're not equal. There is also another
+        test that asserts that sizelimit >= 3999577.
+      * maxVout is set to MAX_BLOCK_BASE_SIZE / 9, and this value is used to
+        discard transactions with large vouts.
+    * It would probably be a good idea for the Python tests to use symbolic
+      constants, rather than hardcoded values.
+
+BitGo:
+    * Nothing of interest.
+
+Bither:
+    bitherj:
+        * bitherj copy-pastes some code from Bitcoinj. The notes that applied to
+          Bitcoinj apply to this, as well.
+    bither-android, bither-ios, bither-desktop-java:
+        * Nothing of interest.
+    
+blocktrail-wallet:
+    * Nothing of interest.
+
+Breadwallet:
+    breadwallet-core, breadwallet-android, breadwallet:
+        * Nothing of interest.

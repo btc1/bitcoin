@@ -1,7 +1,7 @@
-Bitcoin Core integration/staging tree
+btc1 Core integration/staging tree
 =====================================
 
-[![Build Status](https://travis-ci.org/bitcoin/bitcoin.svg?branch=master)](https://travis-ci.org/bitcoin/bitcoin)
+[![Build Status](https://travis-ci.org/btc1/bitcoin.svg?branch=segwit2x)](https://travis-ci.org/btc1/bitcoin)
 
 https://bitcoincore.org
 
@@ -27,8 +27,8 @@ information or see https://opensource.org/licenses/MIT.
 Development Process
 -------------------
 
-The `master` branch is regularly built and tested, but is not guaranteed to be
-completely stable. [Tags](https://github.com/bitcoin/bitcoin/tags) are created
+The `segwit2x` branch is regularly built and tested, but is not guaranteed to be
+completely stable. [Tags](https://github.com/btc1/bitcoin/tags) are created
 regularly to indicate new official, stable release versions of Bitcoin Core.
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -54,9 +54,9 @@ submit new unit tests for old code. Unit tests can be compiled and run
 (assuming they weren't disabled in configure) with: `make check`. Further details on running
 and extending unit tests can be found in [/src/test/README.md](/src/test/README.md).
 
-There are also [regression and integration tests](/qa) of the RPC interface, written
+There are also [regression and integration tests](/test), written
 in Python, that are run automatically on the build server.
-These tests can be run (if the [test dependencies](/qa) are installed) with: `qa/pull-tester/rpc-tests.py`
+These tests can be run (if the [test dependencies](/test) are installed) with: `test/functional/test_runner.py`
 
 The Travis CI system makes sure that every pull request is built for Windows, Linux, and OS X, and that unit/sanity tests are run automatically.
 
