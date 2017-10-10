@@ -945,6 +945,19 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
         if (!Params().RequireStandard()) {
             scriptVerifyFlags = GetArg("-promiscuousmempoolflags", scriptVerifyFlags);
         }
+        
+        // There are two approaches with regards to mempool behaviour and
+        // the new SIGHASH type. 
+        // (1) Reject until the fork. This can allow certain DDoS attacks,
+        //     where a node that is still catching up is sent a new transaction,
+        //     which can cause that node to get banned
+        // (2) Allow new transactions from day one, but don't include them in blocks
+        //     until actual fork. Eventually these transactions would drop out of
+        //     the mempool. 
+        const int nBlockHeight = chainActive.Height();
+        if (nBlockHeight >= Params().SW2XHeight) {
+            flags |= SCRIPT_VERIFY_ALLOW_2X_SIGHASH;
+        }
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
