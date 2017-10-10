@@ -25,6 +25,7 @@ enum
     SIGHASH_NONE = 2,
     SIGHASH_SINGLE = 3,
     SIGHASH_ANYONECANPAY = 0x80,
+    SIGHASH_2X_REPLAY_PROTECT = 4,
 };
 
 /** Script verification flags */
@@ -106,6 +107,9 @@ enum
     // Public keys in segregated witness scripts must be compressed
     //
     SCRIPT_VERIFY_WITNESS_PUBKEYTYPE = (1U << 15),
+
+    // After the 2X fork date, we allow a special SIGHASH 
+    SCRIPT_VERIFY_ALLOW_2X_SIGHASH = (1U << 16),
 };
 
 bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);

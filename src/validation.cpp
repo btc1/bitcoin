@@ -1852,6 +1852,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         flags |= SCRIPT_VERIFY_NULLDUMMY;
         fSegwitSeasoned = IsWitnessSeasoned(pindex->pprev, chainparams.GetConsensus());
     }
+    
+    if (pindex->nHeight >= chainparams.GetConsensus().BIP66Height) {
+        flags |= SCRIPT_VERIFY_ALLOW_2X_SIGHASH;
+    }
 
     // SEGWIT2X signalling.
     if (VersionBitsState(pindex->pprev, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT2X, versionbitscache) == THRESHOLD_ACTIVE &&

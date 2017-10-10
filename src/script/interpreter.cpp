@@ -183,12 +183,14 @@ bool static IsLowDERSignature(const valtype &vchSig, ScriptError* serror) {
     return true;
 }
 
-bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
+bool static IsDefinedHashtypeSignature(const valtype &vchSig, const boolean allowReplay) {
     if (vchSig.size() == 0) {
         return false;
     }
     unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY));
-    if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
+    if (nHashType < SIGHASH_ALL
+        || (allowReplay && nHashType > SIGHASH_2X_REPLAY_PROTECT) 
+        || (!allowReplay && nHashType > SIGHASH_SINGLE)) 
         return false;
 
     return true;
@@ -205,7 +207,8 @@ bool CheckSignatureEncoding(const vector<unsigned char> &vchSig, unsigned int fl
     } else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
         // serror is set
         return false;
-    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 && !IsDefinedHashtypeSignature(vchSig)) {
+    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 
+        && !IsDefinedHashtypeSignature(vchSig, (flags & SCRIPT_VERIFY_ALLOW_2X_SIGHASH != null))) {
         return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
     }
     return true;
