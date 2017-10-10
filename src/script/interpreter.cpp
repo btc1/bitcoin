@@ -183,7 +183,7 @@ bool static IsLowDERSignature(const valtype &vchSig, ScriptError* serror) {
     return true;
 }
 
-bool static IsDefinedHashtypeSignature(const valtype &vchSig, const boolean allowReplay) {
+bool static IsDefinedHashtypeSignature(const valtype &vchSig, const bool allowReplay) {
     if (vchSig.size() == 0) {
         return false;
     }
