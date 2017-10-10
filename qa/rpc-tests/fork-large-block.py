@@ -180,15 +180,24 @@ class ForkLargeBlockTest(BitcoinTestFramework):
         # Test hard fork at block 1583
         assert_equal(self.height, 584)
 
-        b = [self.nodes[0].getblockhash(n) for n in range(1, 10)]
+        b = [self.nodes[0].getblockhash(n) for n in range(1, 11)]
         txids = [self.nodes[0].getblock(h)['tx'][0] for h in b]
         spend_tx = [FromHex(CTransaction(), self.nodes[0].getrawtransaction(txid)) for txid in txids]
         for tx in spend_tx:
             tx.rehash()
-        large_tx = [self.create_tx(t, 0, 1, length=500000) for t in spend_tx]
 
-        self.generate_blocks(998, 4)
+        spend_tx_extra = spend_tx[:1]
+        spend_tx_large = spend_tx[1:]
 
+        large_tx = [self.create_tx(t, 0, 1, length=500000) for t in spend_tx_large]
+
+        noreplay_tx = self.create_tx(spend_tx_extra[0], 0, 0)
+        noreplay_tx.nVersion |= 0x20000000
+        noreplay_tx.rehash()
+
+        self.generate_blocks(997, 4)
+
+        self.generate_blocks(1, 4, txs=[noreplay_tx]) # noreplay-tx is ok
         self.generate_blocks(1, 4, "bad-blk-length", txs=[large_tx[0], large_tx[1]]) # block too large
         self.generate_blocks(1, 4, txs=[large_tx[0]]) # large txs is ok
 
@@ -207,6 +216,8 @@ class ForkLargeBlockTest(BitcoinTestFramework):
         assert_equal(self.height, 6584)
 
         self.generate_blocks(1, 4, txs=[large_tx[4], large_tx[5], large_tx[6]]) # large block ok
+        self.generate_blocks(1, 4, "bad-blk-rptx", txs=[noreplay_tx]) # reject segwit2x tx
+
 
 
     def generate_blocks(self, number, version, error = None, txs = []):

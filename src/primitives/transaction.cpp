@@ -141,6 +141,12 @@ std::string CTransaction::ToString() const
     return str;
 }
 
+bool CTransaction::ReplayProtected() const
+{
+    // Reject transaction on 2x
+    return (this->nVersion & TX_VERSION_REJECT_SEGWIT2X);
+}
+
 int64_t GetTransactionWeight(const CTransaction& tx)
 {
     return ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) * (WITNESS_SCALE_FACTOR -1) + ::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION);

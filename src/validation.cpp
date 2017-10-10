@@ -598,6 +598,9 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
     if (fRequireStandard && !IsStandardTx(tx, reason, witnessEnabled))
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
+    if (tx.ReplayProtected())
+        return state.DoS(0, false, REJECT_NONSTANDARD, "replay-protected");
+
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
     // be mined yet.
@@ -3121,6 +3124,9 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Co
     for (const auto& tx : block.vtx)
     {
         nSigOps += GetLegacySigOpCount(*tx);
+
+        if (fSegwitSeasoned && tx->ReplayProtected())
+          return state.DoS(100, false, REJECT_INVALID, "bad-blk-rptx", false, "replay-protected tx in block");
     }
     if (nSigOps * WITNESS_SCALE_FACTOR > MaxBlockSigOpsCost(fSegwitSeasoned))
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");

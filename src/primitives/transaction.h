@@ -15,6 +15,11 @@ static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
 static const int WITNESS_SCALE_FACTOR = 4;
 
+// Opt-in chain rejection based on bits 29 and 30 of the nVersion field (for replay protection)
+static const int TX_VERSION_MASK = 0x1fffffff;
+static const int TX_VERSION_REJECT_SEGWIT2X = 0x20000000;
+static const int TX_VERSION_REJECT_SEGWIT1X = 0x40000000;
+
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
 class COutPoint
 {
@@ -390,6 +395,8 @@ public:
     }
 
     std::string ToString() const;
+
+    bool ReplayProtected() const;
 
     bool HasWitness() const
     {
