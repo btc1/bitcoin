@@ -208,7 +208,7 @@ bool CheckSignatureEncoding(const vector<unsigned char> &vchSig, unsigned int fl
         // serror is set
         return false;
     } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 
-        && !IsDefinedHashtypeSignature(vchSig, (flags & SCRIPT_VERIFY_ALLOW_2X_SIGHASH != null))) {
+        && !IsDefinedHashtypeSignature(vchSig, (flags & SCRIPT_VERIFY_ALLOW_2X_SIGHASH != 0))) {
         return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
     }
     return true;
