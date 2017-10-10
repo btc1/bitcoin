@@ -141,7 +141,6 @@ private:
 
     // Configuration parameters for the block size
     bool fIncludeWitness;
-    bool fWitnessSeasoned;
     unsigned int nBlockMaxWeight, nBlockMaxSize;
     bool fNeedSizeAccounting;
     CFeeRate blockMinFeeRate;
