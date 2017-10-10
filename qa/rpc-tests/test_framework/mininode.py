@@ -52,7 +52,6 @@ NODE_NETWORK = (1 << 0)
 NODE_GETUTXO = (1 << 1)
 NODE_BLOOM = (1 << 2)
 NODE_WITNESS = (1 << 3)
-NODE_SEGWIT2X = (1 << 7)
 
 # Keep our own socket map for asyncore, so that we can track disconnects
 # ourselves (to workaround an issue with closing an asyncore socket when
@@ -1612,7 +1611,7 @@ class NodeConn(asyncore.dispatcher):
     }
     MAGIC_BYTES = {
         "mainnet": b"\xf9\xbe\xb4\xd9",   # mainnet
-        "testnet5": b"\x6e\x65\x74\x00",  # testnet5
+        "testnet3": b"\x0b\x11\x09\x07",  # testnet3
         "regtest": b"\xfa\xbf\xb5\xda",   # regtest
     }
 

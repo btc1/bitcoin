@@ -41,62 +41,10 @@
         <source>&amp;Delete</source>
         <translation>&amp;Видалити</translation>
     </message>
-    <message>
-        <source>Choose the address to send coins to</source>
-        <translation>Оберіть адресу для відправки монет</translation>
-    </message>
-    <message>
-        <source>Choose the address to receive coins with</source>
-        <translation>Оберіть адресу для отримання монет</translation>
-    </message>
-    <message>
-        <source>C&amp;hoose</source>
-        <translation>О&amp;брати</translation>
-    </message>
-    <message>
-        <source>Sending addresses</source>
-        <translation>Адреса відправлення</translation>
-    </message>
-    <message>
-        <source>Receiving addresses</source>
-        <translation>Адреса отримання</translation>
-    </message>
-    <message>
-        <source>Copy &amp;Label</source>
-        <translation>Зкопіювати&amp;Створити мітку</translation>
-    </message>
-    <message>
-        <source>&amp;Edit</source>
-        <translation>&amp;Редагувати</translation>
-    </message>
-    <message>
-        <source>Export Address List</source>
-        <translation>Експотувати список адрес</translation>
-    </message>
-    <message>
-        <source>Comma separated file (*.csv)</source>
-        <translation>Файли (*.csv) розділеі комами</translation>
-    </message>
-    <message>
-        <source>Exporting Failed</source>
-        <translation>Експортування пройшло не успішно</translation>
-    </message>
-    <message>
-        <source>There was an error trying to save the address list to %1. Please try again.</source>
-        <translation>Виникла помилка при спрбі збереження списку адрес %1. Будь-ласка, спробувати пізніше. </translation>
-    </message>
-</context>
+    </context>
 <context>
     <name>AddressTableModel</name>
-    <message>
-        <source>Label</source>
-        <translation>Мітка</translation>
-    </message>
-    <message>
-        <source>(no label)</source>
-        <translation>(немає мітки)</translation>
-    </message>
-</context>
+    </context>
 <context>
     <name>AskPassphraseDialog</name>
     <message>
@@ -461,10 +409,6 @@
     <message>
         <source>Confirmed</source>
         <translation>Підтверджені</translation>
-    </message>
-    <message>
-        <source>(no label)</source>
-        <translation>немає мітки</translation>
     </message>
     </context>
 <context>
@@ -1326,21 +1270,9 @@
         <source>&amp;Save Image...</source>
         <translation>&amp;Зберегти зображення...</translation>
     </message>
-    <message>
-        <source>Label</source>
-        <translation>Мітка</translation>
-    </message>
     </context>
 <context>
     <name>RecentRequestsTableModel</name>
-    <message>
-        <source>Label</source>
-        <translation>Мітка</translation>
-    </message>
-    <message>
-        <source>(no label)</source>
-        <translation>немає мітки</translation>
-    </message>
     </context>
 <context>
     <name>SendCoinsDialog</name>
@@ -1484,11 +1416,7 @@
         <source>S&amp;end</source>
         <translation>&amp;Відправити</translation>
     </message>
-    <message>
-        <source>(no label)</source>
-        <translation>немає мітки</translation>
-    </message>
-</context>
+    </context>
 <context>
     <name>SendCoinsEntry</name>
     <message>
@@ -1691,29 +1619,9 @@
     </context>
 <context>
     <name>TransactionTableModel</name>
-    <message>
-        <source>Label</source>
-        <translation>Мітка</translation>
-    </message>
-    <message>
-        <source>(no label)</source>
-        <translation>немає мітки</translation>
-    </message>
     </context>
 <context>
     <name>TransactionView</name>
-    <message>
-        <source>Comma separated file (*.csv)</source>
-        <translation>Файли (*.csv) розділеі комами</translation>
-    </message>
-    <message>
-        <source>Label</source>
-        <translation>Мітка</translation>
-    </message>
-    <message>
-        <source>Exporting Failed</source>
-        <translation>Експортування пройшло не успішно</translation>
-    </message>
     </context>
 <context>
     <name>UnitDisplayStatusBarControl</name>

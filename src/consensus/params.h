@@ -17,7 +17,6 @@ enum DeploymentPos
     DEPLOYMENT_TESTDUMMY,
     DEPLOYMENT_CSV, // Deployment of BIP68, BIP112, and BIP113.
     DEPLOYMENT_SEGWIT, // Deployment of BIP141, BIP143, and BIP147.
-    DEPLOYMENT_SEGWIT2X, // Deployment of SEGWIT2X
     // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
     MAX_VERSION_BITS_DEPLOYMENTS
 };
@@ -32,10 +31,6 @@ struct BIP9Deployment {
     int64_t nStartTime;
     /** Timeout/expiry MedianTime for the deployment attempt. */
     int64_t nTimeout;
-    /** Overriding the default threshold if not zero. */
-    uint32_t nOverrideRuleChangeActivationThreshold = 0;
-    /** Overriding the default confirmation window if not zero . */
-    uint32_t nOverrideMinerConfirmationWindow = 0;
 };
 
 /**
@@ -51,9 +46,6 @@ struct Params {
     int BIP65Height;
     /** Block height at which BIP66 becomes active */
     int BIP66Height;
-    /** Block height delta at which BIP102 becomes active */
-    int BIP102HeightDelta;
-
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.

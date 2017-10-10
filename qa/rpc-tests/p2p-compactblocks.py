@@ -123,7 +123,7 @@ class CompactBlocksTest(BitcoinTestFramework):
 
         # Start up node0 to be a version 1, pre-segwit node.
         self.nodes = start_nodes(self.num_nodes, self.options.tmpdir, 
-                [["-debug", "-logtimemicros=1", "-bip9params=segwit:0:0", "-blockversion=536870915"], # signal segwit and csv
+                [["-debug", "-logtimemicros=1", "-bip9params=segwit:0:0"], 
                  ["-debug", "-logtimemicros", "-txindex"]])
         connect_nodes(self.nodes[0], 1)
 
@@ -834,7 +834,7 @@ class CompactBlocksTest(BitcoinTestFramework):
         connections = []
         connections.append(NodeConn('127.0.0.1', p2p_port(0), self.nodes[0], self.test_node))
         connections.append(NodeConn('127.0.0.1', p2p_port(1), self.nodes[1],
-                    self.segwit_node, services=NODE_NETWORK|NODE_WITNESS|NODE_SEGWIT2X))
+                    self.segwit_node, services=NODE_NETWORK|NODE_WITNESS))
         connections.append(NodeConn('127.0.0.1', p2p_port(1), self.nodes[1],
                     self.old_node, services=NODE_NETWORK))
         self.test_node.add_connection(connections[0])
