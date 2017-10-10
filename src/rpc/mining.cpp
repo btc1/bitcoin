@@ -661,7 +661,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             }
         }
     }
-    result.push_back(Pair("version", pblock->nVersion));
+    result.push_back(Pair("version", (uint64_t)pblock->nVersion));
     result.push_back(Pair("rules", aRules));
     result.push_back(Pair("vbavailable", vbavailable));
     result.push_back(Pair("vbrequired", int(0)));

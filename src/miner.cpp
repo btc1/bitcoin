@@ -150,6 +150,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     nHeight = pindexPrev->nHeight + 1;
 
     pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
+    const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - BIP102_FORK_BUFFER);
+    bool fSegwitSeasoned = (VersionBitsState(pindexForkBuffer, chainparams.GetConsensus(), Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+
+    if (BIP102active(nHeight, fSegwitSeasoned))
+        pblock->nVersion |= HARDFORK_VERSION_BIT;
+
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())

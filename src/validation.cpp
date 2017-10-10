@@ -3002,6 +3002,8 @@ std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock& block, const CBloc
 bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev, int64_t nAdjustedTime)
 {
     const int nHeight = pindexPrev == NULL ? 0 : pindexPrev->nHeight + 1;
+    const CBlockIndex* pindexForkBuffer = pindexPrev->GetAncestor(nHeight - BIP102_FORK_BUFFER);
+    bool fSegwitSeasoned = (VersionBitsState(pindexForkBuffer, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
     // Check proof of work
     if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
         return state.DoS(100, false, REJECT_INVALID, "bad-diffbits", false, "incorrect proof of work");
@@ -3014,11 +3016,19 @@ bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& sta
     if (block.GetBlockTime() > nAdjustedTime + 2 * 60 * 60)
         return state.Invalid(false, REJECT_INVALID, "time-too-new", "block timestamp too far in the future");
 
+    if (BIP102active(nHeight, fSegwitSeasoned)) {
+        if (block.nVersion & HARDFORK_VERSION_BIT)
+            return true;
+        return state.Invalid(false, REJECT_OBSOLETE, strprintf("bad-version(0x%08x)", block.nVersion),
+                             strprintf("rejected nVersion=0x%08x block", block.nVersion));
+    }
+
     // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
     // check for version 2, 3 and 4 upgrades
     if((block.nVersion < 2 && nHeight >= consensusParams.BIP34Height) ||
        (block.nVersion < 3 && nHeight >= consensusParams.BIP66Height) ||
-       (block.nVersion < 4 && nHeight >= consensusParams.BIP65Height))
+       (block.nVersion < 4 && nHeight >= consensusParams.BIP65Height) ||
+       (block.nVersion & HARDFORK_VERSION_BIT))
             return state.Invalid(false, REJECT_OBSOLETE, strprintf("bad-version(0x%08x)", block.nVersion),
                                  strprintf("rejected nVersion=0x%08x block", block.nVersion));
 
