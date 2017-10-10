@@ -1853,7 +1853,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
         fSegwitSeasoned = IsWitnessSeasoned(pindex->pprev, chainparams.GetConsensus());
     }
     
-    if (pindex->nHeight >= chainparams.GetConsensus().BIP66Height) {
+    if (pindex->nHeight >= chainparams.GetConsensus().SW2XHeight) {
         flags |= SCRIPT_VERIFY_ALLOW_2X_SIGHASH;
     }
 
