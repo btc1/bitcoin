@@ -183,12 +183,14 @@ bool static IsLowDERSignature(const valtype &vchSig, ScriptError* serror) {
     return true;
 }
 
-bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
+bool static IsDefinedHashtypeSignature(const valtype &vchSig, const bool allowReplay) {
     if (vchSig.size() == 0) {
         return false;
     }
     unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY));
-    if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
+    if (nHashType < SIGHASH_ALL
+        || (allowReplay && nHashType > SIGHASH_2X_REPLAY_PROTECT) 
+        || (!allowReplay && nHashType > SIGHASH_SINGLE)) 
         return false;
 
     return true;
@@ -205,7 +207,8 @@ bool CheckSignatureEncoding(const vector<unsigned char> &vchSig, unsigned int fl
     } else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
         // serror is set
         return false;
-    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 && !IsDefinedHashtypeSignature(vchSig)) {
+    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 
+        && !IsDefinedHashtypeSignature(vchSig, ((flags & SCRIPT_VERIFY_ALLOW_2X_SIGHASH) != 0))) {
         return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
     }
     return true;
@@ -267,6 +270,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
         return set_error(serror, SCRIPT_ERR_SCRIPT_SIZE);
     int nOpCount = 0;
     bool fRequireMinimal = (flags & SCRIPT_VERIFY_MINIMALDATA) != 0;
+    bool fReplayProtected = (flags & SCRIPT_VERIFY_ALLOW_2X_SIGHASH) != 0;
 
     try
     {
@@ -899,7 +903,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         //serror is set
                         return false;
                     }
-                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode, sigversion);
+                    bool fSuccess = checker.CheckSig(vchSig, vchPubKey, scriptCode, sigversion, fReplayProtected);
 
                     if (!fSuccess && (flags & SCRIPT_VERIFY_NULLFAIL) && vchSig.size())
                         return set_error(serror, SCRIPT_ERR_SIG_NULLFAIL);
@@ -975,7 +979,7 @@ bool EvalScript(vector<vector<unsigned char> >& stack, const CScript& script, un
                         }
 
                         // Check signature
-                        bool fOk = checker.CheckSig(vchSig, vchPubKey, scriptCode, sigversion);
+                        bool fOk = checker.CheckSig(vchSig, vchPubKey, scriptCode, sigversion, fReplayProtected);
 
                         if (fOk) {
                             isig++;
@@ -1250,7 +1254,7 @@ bool TransactionSignatureChecker::VerifySignature(const std::vector<unsigned cha
     return pubkey.Verify(sighash, vchSig);
 }
 
-bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn, const vector<unsigned char>& vchPubKey, const CScript& scriptCode, SigVersion sigversion) const
+bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn, const vector<unsigned char>& vchPubKey, const CScript& scriptCode, SigVersion sigversion, bool fReplayProtection) const
 {
     CPubKey pubkey(vchPubKey);
     if (!pubkey.IsValid())
@@ -1262,6 +1266,11 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
         return false;
     int nHashType = vchSig.back();
     vchSig.pop_back();
+    
+    // If nHashType is set to SIGHASH_2X_REPLAY_PROTECT we require bit 8 be set to 1
+    // Requiring bit 8 to be set to 1 at all times would break backward compatibility
+    if (fReplayProtection && (nHashType & 0x1f) == SIGHASH_2X_REPLAY_PROTECT)
+        nHashType |= (1U << 8); 
 
     uint256 sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, sigversion, this->txdata);
 

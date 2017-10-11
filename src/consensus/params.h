@@ -51,6 +51,8 @@ struct Params {
     int BIP65Height;
     /** Block height at which BIP66 becomes active */
     int BIP66Height;
+    /** Block height at which 2X fork happens */
+    int SW2XHeight;
     /** Block height delta at which BIP102 becomes active */
     int BIP102HeightDelta;
 
