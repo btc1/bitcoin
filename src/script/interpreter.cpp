@@ -1201,6 +1201,12 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
             ss << txTo.vout[nIn];
             hashOutputs = ss.GetHash();
         }
+        
+        // If nHashType is set to SIGHASH_2X_REPLAY_PROTECT we require bit 8 be set to 1
+        // Requiring bit 8 to be set to 1 at all times would break backward compatibility
+        if((nHashType & 0x1f) == SIGHASH_2X_REPLAY_PROTECT) {
+            nHashType |= (1U << 8); 
+        }
 
         CHashWriter ss(SER_GETHASH, 0);
         // Version
