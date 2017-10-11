@@ -1269,7 +1269,7 @@ bool TransactionSignatureChecker::CheckSig(const vector<unsigned char>& vchSigIn
     
     // If nHashType is set to SIGHASH_2X_REPLAY_PROTECT we require bit 8 be set to 1
     // Requiring bit 8 to be set to 1 at all times would break backward compatibility
-    if (replayProtection && (nHashType & 0x1f) == SIGHASH_2X_REPLAY_PROTECT)
+    if (fReplayProtection && (nHashType & 0x1f) == SIGHASH_2X_REPLAY_PROTECT)
         nHashType |= (1U << 8); 
 
     uint256 sighash = SignatureHash(scriptCode, *txTo, nIn, nHashType, amount, sigversion, this->txdata);
