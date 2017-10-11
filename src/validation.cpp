@@ -955,7 +955,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
         //     until actual fork. Eventually these transactions would drop out of
         //     the mempool. 
         const int nBlockHeight = chainActive.Height();
-        if (nBlockHeight >= Params().SW2XHeight) {
+        if (nBlockHeight >= Params().GetConsensus().SW2XHeight) {
             scriptVerifyFlags |= SCRIPT_VERIFY_ALLOW_2X_SIGHASH;
         }
 
