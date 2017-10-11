@@ -956,7 +956,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState& state, const C
         //     the mempool. 
         const int nBlockHeight = chainActive.Height();
         if (nBlockHeight >= Params().SW2XHeight) {
-            flags |= SCRIPT_VERIFY_ALLOW_2X_SIGHASH;
+            scriptVerifyFlags |= SCRIPT_VERIFY_ALLOW_2X_SIGHASH;
         }
 
         // Check against previous transactions
