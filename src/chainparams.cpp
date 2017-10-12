@@ -80,6 +80,7 @@ public:
         consensus.BIP65Height = 388381; // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
         consensus.BIP66Height = 363725; // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
         consensus.BIP102HeightDelta = 144 * 90;
+        consensus.BIP102ReplaySunsetTime = 1518134459; // February 9, 2018
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
@@ -195,7 +196,8 @@ public:
         consensus.BIP34Hash = uint256S("0x00000000fb7c0a2aeb5f1244e81921b84b7ac770004543144e10c2284f89bfd8");
         consensus.BIP65Height = 10001; // 00000000fb7c0a2aeb5f1244e81921b84b7ac770004543144e10c2284f89bfd8
         consensus.BIP66Height = 10001; // 00000000fb7c0a2aeb5f1244e81921b84b7ac770004543144e10c2284f89bfd8
-        consensus.BIP102HeightDelta = 144 * 90; // TODO: update re test plan
+        consensus.BIP102HeightDelta = 144 * 90;
+        consensus.BIP102ReplaySunsetTime = 1518134459; // February 9, 2018
         consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
@@ -289,7 +291,8 @@ public:
         consensus.BIP34Hash = uint256();
         consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
-        consensus.BIP102HeightDelta = 144 * 7; // TODO: update
+        consensus.BIP102HeightDelta = 144 * 7;
+        consensus.BIP102ReplaySunsetTime = 1518134459; // February 9, 2018
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;

@@ -53,6 +53,8 @@ struct Params {
     int BIP66Height;
     /** Block height delta at which BIP102 becomes active */
     int BIP102HeightDelta;
+    /** Block time (MTP) at which BIP102 replay protection sunsets (deactivates) */
+    int BIP102ReplaySunsetTime;
 
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,

@@ -347,6 +347,8 @@ public:
 
     std::string ToString() const;
 
+    bool ReplayProtected() const;
+
     bool HasWitness() const
     {
         for (size_t i = 0; i < vin.size(); i++) {

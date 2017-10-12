@@ -113,3 +113,18 @@ std::string CTransaction::ToString() const
         str += "    " + tx_out.ToString() + "\n";
     return str;
 }
+
+bool CTransaction::ReplayProtected() const
+{
+    // hex("RP=!>1x") = 52503d213e3178
+    static const CScript noReplay =
+        CScript() << OP_RETURN << ParseHex("52503d213e3178");
+
+    for (const auto& txout : this->vout) {
+        if (txout.scriptPubKey == noReplay) {
+            return true;
+        }
+    }
+    return false;
+}
+
