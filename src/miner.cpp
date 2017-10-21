@@ -70,13 +70,8 @@ BlockAssembler::Options::Options() {
 BlockAssembler::BlockAssembler(const CChainParams& params, const Options& options) : chainparams(params)
 {
     blockMinFeeRate = options.blockMinFeeRate;
-
-    // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity:
-    nBlockMaxWeight = std::max<size_t>(4000, std::min<size_t>(MaxBlockWeight(fWitnessSeasoned) - 4000, options.nBlockMaxWeight));
-    // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity:
-    nBlockMaxSize = std::max<size_t>(1000, std::min<size_t>(MaxBlockSerSize(fWitnessSeasoned) - 1000, options.nBlockMaxSize));
-    // Whether we need to account for byte usage (in addition to weight usage)
-    fNeedSizeAccounting = (nBlockMaxSize < MaxBlockSerSize(fWitnessSeasoned) - 1000);
+    nBlockMaxWeight = options.nBlockMaxWeight;
+    nBlockMaxSize = options.nBlockMaxSize;
 }
 
 static BlockAssembler::Options DefaultOptions(const CChainParams& params)
@@ -91,8 +86,6 @@ static BlockAssembler::Options DefaultOptions(const CChainParams& params)
     bool fWeightSet = false;
     if (gArgs.IsArgSet("-blockmaxweight")) {
         options.nBlockMaxWeight = gArgs.GetArg("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
-#warning "skipping nMaxBlockSize"
-        //options.nBlockMaxSize = MaxBlockSerSize(fWitnessSeasoned);
         fWeightSet = true;
     }
     if (gArgs.IsArgSet("-blockmaxsize")) {
@@ -171,6 +164,14 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // transaction (which in most cases can be a no-op).
     fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
     fWitnessSeasoned = IsWitnessSeasoned(pindexPrev, chainparams.GetConsensus());
+
+    // These sanity checks should be done on each block in case max size/weights have changed due to HF activation
+    // Limit weight to between 4K and MAX_BLOCK_WEIGHT-4K for sanity:
+    nBlockMaxWeight = std::max<size_t>(4000, std::min<size_t>(MaxBlockWeight(fWitnessSeasoned) - 4000, nBlockMaxWeight));
+    // Limit size to between 1K and MAX_BLOCK_SERIALIZED_SIZE-1K for sanity:
+    nBlockMaxSize = std::max<size_t>(1000, std::min<size_t>(MaxBlockSerSize(fWitnessSeasoned) - 1000, nBlockMaxSize));
+    // Whether we need to account for byte usage (in addition to weight usage)
+    fNeedSizeAccounting = (nBlockMaxSize < MaxBlockSerSize(fWitnessSeasoned) - 1000);
 
     int nPackagesSelected = 0;
     int nDescendantsUpdated = 0;
