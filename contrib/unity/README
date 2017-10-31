@@ -1,0 +1,285 @@
+Overview
+----------
+TL; DR: Be nice *and* keep Bitcoin in one piece!
+
+Chain splitting can be prevented using the BitcoinUnity soft
+fork and thus guarantee a single Bitcoin future.
+............................................................
+
+Hello dear Bitcoin community,
+
+November 17 is expected to be the activation date of the
+SegWit2X hard fork. This, together with the SegWit part, is
+one of the the most controversial changes to the Bitcoin
+protocol so far.
+
+The next division and fight for the name Bitcoin have the
+possibility of inflicting massive damage to Bitcoin.
+
+I, as a developer in a small bitcoin mine, have done my best
+now to find a remedy for this potential situation.
+
+As you know, there have been several attempts to implement
+replay protection in Bitcoin. They all failed due to
+different obstacles and problems. They failed especially in
+the rightful demand by btc1, that has most of the miners
+behind it, to be Bitcoin and not a split-off.
+
+From the circles of the btc1 project, I got hold of the
+ideas "b0rg" as well as the proposal "BitcoinUnity".
+
+The "b0rg" proposal seems too aggressive.
+
+But the BitcoinUnity project appears to be much more
+practicable.
+
+In this set of patches, you find a complete implementation
+of the BitcoinUnity soft fork idea. The code is currently
+less than 400 lines long and can therefore hopefully be
+fully reviewed in time still.
+
+BitcoinUnity
+------------
+The core idea of BitcoinUnity is to put only those
+transactions into the 1x chain which also succeeded on the
+2x chain, and therefore map a subset of the transactions in
+the 2x chain into the 1x chain.  Preferably those who pay
+maximum transaction fees.
+
+(This does not apply for the separate coinbase transaction
+in 1x)
+
+Ths ensures that a division of the two chains and therefore
+the price and a dirty fight over supremacy of legacy against
+2x Bitcoin is impossible!
+
+At the same time, however, short-term compatibility with
+*all* existing software using the current legacy is
+guaranteed!  (In the long term, this depends on the interest
+of the Miners to keep 1x running)
+
+And in the case that the 2x hard fork is finally not
+desired, this soft fork can be turned off directly and then
+allows habitual, continuous operation of the SegWit1x chain
+like before.
+
+For users and supporters of the 1x chain nothing changes in
+that case, except some, non-essential (and in any case
+expected) hiccups in confirmation time.
+
+Also, the only short-term disadvantage for users of the 1x
+chain is the delay of transaction confirmation by a few
+confirmations on the 2x chain.
+
+Due to the low levels of hashrates initially expected on the
+1x chain and in these times of uncertainty, this should not
+represent a major problem.
+
+The fork is implemented in two variants: UNITY and
+UNITY0. The only difference from UNITY0 to UNITY is that for
+UNITY0, it is expected that all coinbase outputs are zero on
+the 1x chain after the SegWit2x hard fork.
+
+Due to the nature of this proposal as a soft fork, it is
+solely the responsibility of the miners to activate it,
+UNITY or UNITY0 - or let it be.
+
+One reason for miners to enable UNITY instead of UNITY0
+would be to allow the miners to do *one* transfer of the 1x
+mining income to an exchange that is stubborn and continues
+to list the 1x and 2x chains separately rather than just as
+Bitcoin, as it should be!
+
+By inserting an exchange's payment address into the coin
+base, the miners can then sell the 1x coins. It is at the
+exchanges risk then to hope for a re-enabling of the 1x
+chain or eat the loss of eventually unspendable coins.
+
+Implementation
+--------------
+The use of the python language and the Bitcoin RPC interface
+allowed a rapid development and implementation of this idea.
+
+It also allows the necessary code to be kept relatively easy
+and transparent, to facility review in this short time
+frame.  This of course does not come without disadvantages,
+see below.
+
+The implementation consists of a python tool called
+"unity.py", which after being started reads a configuration
+from a .ini file. It then connects by RPC protocol to two
+bitcoind instances: An instance of Core 0.14 and one of the
+reference implementation btc1.
+
+At regular and configurable intervals, the "unity.py"
+program then checks compliance with the rules of this soft
+fork.  It also whitelists and fills the mempool of the 1x
+instance with the sufficiently aged transactions of the
+SegWit2X chain.
+
+The unity.py program is divided into four modules. The main
+program is in unity.py.
+
+The module activationwatcher.py activates the softfork
+through signaling in the coinbase (UNITY or UNITY0).
+
+newwatcher.py monitors the state of the btc1 chain and
+extracts all transaction IDs starting from the fork date.
+
+And legacywatcher.py makes sure that the 1x chain follows
+the soft fork.
+
+In addition, two smaller patches are needed for Bitcoin Core
+0.14.  The are included in this directory as:
+
+no-reward.diff:
+---------------
+This patch extends the "generate" RPC command so that with a
+negative integer argument given, blocks with zero coinbase
+rewards are generated. This patch is only meant to simplify
+the testing of the implementation of BitcoinUnity.
+
+whitelist.diff:
+---------------
+This patch adds a new RPC "whitelist" command to bitcoind.
+After applying this patch and if bitcoind is started using
+the argument "-acceptnonstdtxn=0", bitcoind sees every
+transactions as non-standard and will deny inclusion into
+the mempool unless a transaction has been explicitly
+whitelisted using the new RPC call before.
+
+This patch is used to fill the mempool of the 1x chain only
+with those transactions that have been mined on the 2x chain
+(and have persisted for long enough).
+
+It should be noted that this whitelisting is non-permanent
+and only valid for the runtime duration of the program.
+
+Both patches can be applied using "cat <patch>|patch -p1"
+when in the root directory of the Core 0.14 checked out
+source code.
+
+Trying out and testing
+----------------------
+Simple tests for the above two patches, as well as the
+central function of the unity.py soft fork are included. The
+whitelist and the generate RPC tweaks can be tested by
+running the respective RPC test on Core 0.14 patched with
+the respective patch that includes the test.
+
+To test BitcoinUnity, a Bitcoin Core 0.14 modified with the
+above two patches is required, as well as a current btc1
+client.  In addition, the installation of jgarzik's
+bitcoinrpc library for python 3 is necessary.
+
+The names and locations of the two network clients are
+currently hard coded as relative paths in the test program.
+Therefore, the following directory structure *must* be
+created:
+
+./bitcoin-core - needs to contain patched Core 0.14, with
+                 bitcoind built in the subdirectory "src"
+                 from there, as usual
+
+./bitcoin-btc1 - as above, but for the implementation of
+                 btc1
+
+In the directory ..../qa/rpc-tests/ there is a file
+"unity_test.py".  This is the test of the soft fork. It can
+be executed like this:
+
+> cd ..../bitcoin-btc1/qa/rpc-tests/
+> ./unity_test.py
+
+It starts two Bitcoin Core nodes (representing the 1x
+chain), two Bitcoin reference nodes (representing the 2x
+chain) as well as the unity.py program for the automatic
+application of the soft fork and whitelisting of
+transactions. The test should pass without problems.
+
+Further issues
+--------------
+The bitcoinds needs to be started with the '-txindex'
+option, so that the transaction index and the associated
+RPCs work.
+
+Non-standard transactions in the network can make bitcoind
+jump into safemode. Therefore it is also advised to add the
+"-disablesafemode" option.
+
+Finally, the 1x bitcoind Core instances must be started with
+the "-acceptnonstdtxn=0" option to make the mandatory
+whitelisting active.
+
+Furthermore, in use in the field, the 1x bitcoind should run
+behind another Core node (like a firewall) and needs to be
+connected with a whitelisted to this firewall node, so that
+it will not get banned due to rejection of transactions etc.
+
+An example template to configure BitcoinUnity is in the file
+proposal.ini.
+
+Bugs and problems
+-----------------
+The code is in the ALPHA stage! Only has only been somewhat
+tested on linux.  Apart from bench testing, it is unproven
+in the field. If this is deemed as an acceptable way
+forward, the remaining little time should be devoted to
+intensive testing of this approach.
+
+unity.py uses polling to guarantee the softfork. Through the
+ZMQ interface in Bitcoin it should be possible to rework
+this to triggered operation.
+
+This kind of polling also means a certain extra orphan risk
+in the order of magnitude of poll interval exists. But this
+must be compared with the risk of "mining on the wrong
+chain", and thus appears manageable.
+
+RPC access to at least one extra bitcoind instance is
+necessary to carry out the soft fork. This is additional
+complexity could possibly be shifted to a tracking of the
+minority fork in the btc1 bitcoind software.
+
+Python is slow. In a long-term forked scenario, the amount
+of transactions might get too large and, therefore, unity.py
+too slow.
+
+The transaction whitelist use main memory, both in python
+and also in the bitcoind C ++ code. This could also overflow
+for a very long time fork scenario.
+
+Due to the transient nature of the whitelist, it is
+necessary to be careful in the order of restarting unity.py
+and the two bitcoinds.  Possibly one should, before
+restarting, put the height of the last accepted block of the
+1x chain into the .ini file and increase that value at each
+restart.
+
+When unity.py starts, it first reads the transactions of the
+btc1 chain into memory, then turn them over to the 1x chain
+by whitelisting and submitting them.  This software behavior
+quite likely requires an overhaul.
+
+Finally, the test code unfortunately uses time.sleep(..) too
+often right now.
+
+Conclusions
+-----------
+Dear btc1 community and also the larger Bitcoin community!
+Please read this and try to figure out whether you think
+that this soft fork is a good idea. And if so, help to try
+out and finish this soft fork code.  It is urgent!
+
+As a disclaimer, I should say that the ideas presented here
+are not mine.  I'm just someone who made a hopefully
+feasible implementation.
+
+Dear btc1 team especially, please take a look at this
+proposal and the code included. This is only in the "alpha"
+stage. In particular, "off-by-one" in block height, etc. are
+quite possible etc..
+
+Please also contact the miners and ask for an opinion.
+
+Thank you very much!
