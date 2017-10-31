@@ -1,0 +1,133 @@
+diff -duNr bitcoin-core.old/qa/rpc-tests/no-reward.py bitcoin-core/qa/rpc-tests/no-reward.py
+--- bitcoin-core.old/qa/rpc-tests/no-reward.py	1970-01-01 01:00:00.000000000 +0100
++++ bitcoin-core/qa/rpc-tests/no-reward.py	2017-10-31 18:08:21.438155730 +0000
+@@ -0,0 +1,50 @@
++#!/usr/bin/env python3
++# Copyright (c) 2014-2016 The Bitcoin Core developers
++# Distributed under the MIT software license, see the accompanying
++# file COPYING or http://www.opensource.org/licenses/mit-license.php.
++
++#
++# Test generate RPC with negative values for no reward implementation
++#
++
++from test_framework.test_framework import BitcoinTestFramework
++from test_framework.util import *
++from test_framework.script import *
++from test_framework.mininode import *
++from test_framework.blocktools import *
++
++
++class NoRewardTest(BitcoinTestFramework):
++    def __init__(self):
++        super().__init__()
++        self.num_nodes = 1
++        self.setup_clean_chain = True
++
++    def setup_network(self):
++        self.nodes = []
++        self.nodes.append(start_node(0, self.options.tmpdir, ["-debug"]))
++        self.is_network_split = False
++
++    def run_test(self):
++        self.test_reward()
++        self.test_no_reward()
++
++    def test_reward(self):
++        print("reward")
++        self.nodes[0].generate(1)
++        tip = self.nodes[0].getbestblockhash()
++        cb_txid = self.nodes[0].getblock(tip)['tx'][0]
++        cb = self.nodes[0].gettransaction(cb_txid)
++        assert_equal(cb["details"][0]["amount"], Decimal("50.0"))
++
++    def test_no_reward(self):
++        print("no reward")
++        self.nodes[0].generate(-1)
++        tip = self.nodes[0].getbestblockhash()
++        cb_txid = self.nodes[0].getblock(tip)['tx'][0]
++        cb = self.nodes[0].gettransaction(cb_txid)
++        assert_equal(cb["details"][0]["amount"], Decimal("0.0"))
++
++
++if __name__ == '__main__':
++    NoRewardTest().main()
+diff -duNr bitcoin-core.old/src/miner.cpp bitcoin-core/src/miner.cpp
+--- bitcoin-core.old/src/miner.cpp	2017-10-31 18:08:21.438155730 +0000
++++ bitcoin-core/src/miner.cpp	2017-10-31 18:08:21.438155730 +0000
+@@ -127,7 +127,7 @@
+     blockFinished = false;
+ }
+ 
+-std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn, bool fMineWitnessTx)
++std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn, bool fMineWitnessTx, bool fDropReward)
+ {
+     int64_t nTimeStart = GetTimeMicros();
+ 
+@@ -187,6 +187,10 @@
+     coinbaseTx.vout.resize(1);
+     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
+     coinbaseTx.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
++
++    if (fDropReward)
++        coinbaseTx.vout[0].nValue = 0;
++
+     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
+     pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
+diff -duNr bitcoin-core.old/src/miner.h bitcoin-core/src/miner.h
+--- bitcoin-core.old/src/miner.h	2017-10-31 18:08:21.438155730 +0000
++++ bitcoin-core/src/miner.h	2017-10-31 18:08:21.438155730 +0000
+@@ -165,7 +165,7 @@
+ public:
+     BlockAssembler(const CChainParams& chainparams);
+     /** Construct a new block template with coinbase to scriptPubKeyIn */
+-    std::unique_ptr<CBlockTemplate> CreateNewBlock(const CScript& scriptPubKeyIn, bool fMineWitnessTx=true);
++    std::unique_ptr<CBlockTemplate> CreateNewBlock(const CScript& scriptPubKeyIn, bool fMineWitnessTx=true, bool fDropReward=false);
+ 
+ private:
+     // utility functions
+diff -duNr bitcoin-core.old/src/rpc/mining.cpp bitcoin-core/src/rpc/mining.cpp
+--- bitcoin-core.old/src/rpc/mining.cpp	2017-10-31 18:08:21.438155730 +0000
++++ bitcoin-core/src/rpc/mining.cpp	2017-10-31 18:08:21.438155730 +0000
+@@ -96,7 +96,7 @@
+     return GetNetworkHashPS(request.params.size() > 0 ? request.params[0].get_int() : 120, request.params.size() > 1 ? request.params[1].get_int() : -1);
+ }
+ 
+-UniValue generateBlocks(boost::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript)
++UniValue generateBlocks(boost::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, uint64_t nMaxTries, bool keepScript, bool fDropReward = false)
+ {
+     static const int nInnerLoopCount = 0x10000;
+     int nHeightStart = 0;
+@@ -113,7 +113,7 @@
+     UniValue blockHashes(UniValue::VARR);
+     while (nHeight < nHeightEnd)
+     {
+-        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript));
++        std::unique_ptr<CBlockTemplate> pblocktemplate(BlockAssembler(Params()).CreateNewBlock(coinbaseScript->reserveScript, true, fDropReward));
+         if (!pblocktemplate.get())
+             throw JSONRPCError(RPC_INTERNAL_ERROR, "Couldn't create new block");
+         CBlock *pblock = &pblocktemplate->block;
+@@ -163,6 +163,13 @@
+         );
+ 
+     int nGenerate = request.params[0].get_int();
++
++    bool fDropReward=false;
++    if (nGenerate < 0) {
++        fDropReward = true;
++        nGenerate = -nGenerate;
++    }
++
+     uint64_t nMaxTries = 1000000;
+     if (request.params.size() > 1) {
+         nMaxTries = request.params[1].get_int();
+@@ -179,7 +186,7 @@
+     if (coinbaseScript->reserveScript.empty())
+         throw JSONRPCError(RPC_INTERNAL_ERROR, "No coinbase script available (mining requires a wallet)");
+ 
+-    return generateBlocks(coinbaseScript, nGenerate, nMaxTries, true);
++    return generateBlocks(coinbaseScript, nGenerate, nMaxTries, true, fDropReward);
+ }
+ 
+ UniValue generatetoaddress(const JSONRPCRequest& request)

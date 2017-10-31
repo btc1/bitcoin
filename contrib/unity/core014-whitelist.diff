@@ -1,0 +1,161 @@
+diff -duNr bitcoin-core.old/qa/rpc-tests/whitelisting.py bitcoin-core/qa/rpc-tests/whitelisting.py
+--- bitcoin-core.old/qa/rpc-tests/whitelisting.py	1970-01-01 01:00:00.000000000 +0100
++++ bitcoin-core/qa/rpc-tests/whitelisting.py	2017-10-31 18:10:14.271716201 +0000
+@@ -0,0 +1,79 @@
++#!/usr/bin/env python3
++# Copyright (c) 2014-2016 The Bitcoin Core developers
++# Distributed under the MIT software license, see the accompanying
++# file COPYING or http://www.opensource.org/licenses/mit-license.php.
++
++#
++# Test whitelist implementation
++#
++
++from test_framework.test_framework import BitcoinTestFramework
++from test_framework.util import *
++from test_framework.script import *
++from test_framework.mininode import *
++from test_framework.blocktools import *
++
++
++class WhitelistTest(BitcoinTestFramework):
++    def __init__(self):
++        super().__init__()
++        self.num_nodes = 2
++        self.setup_clean_chain = False
++
++    def setup_network(self):
++        self.nodes = []
++        self.nodes.append(
++            start_node(
++                0, self.options.tmpdir, [
++                    "-debug", "-acceptnonstdtxn=0"]))
++        self.nodes.append(start_node(1, self.options.tmpdir, ["-debug"]))
++        self.is_network_split = False
++        connect_nodes_bi(self.nodes, 0, 1)
++        self.sync_all()
++
++    def run_test(self):
++        print("generating")
++        self.nodes[0].generate(110)
++        self.sync_all()
++        self.nodes[1].generate(110)
++        self.sync_all()
++
++        self.test_whitelisting()
++
++    def test_whitelisting(self):
++        print("not whitelisted")
++        foo_address = self.nodes[1].getnewaddress()
++
++        txid_nw = self.nodes[1].sendfrom('', foo_address, 1.0)
++        time.sleep(5.0)
++
++        assert_equal(self.nodes[0].getmempoolinfo()['bytes'], 0)
++        assert(self.nodes[1].getmempoolinfo()['bytes'] > 0)
++
++        self.nodes[1].generate(1)
++        self.sync_all()
++
++        print("whitelisted")
++        nA = next(
++            i for i,
++            vout in enumerate(
++                self.nodes[1].getrawtransaction(
++                    txid_nw,
++                    1)["vout"]) if vout["value"] == Decimal("1.0"))
++
++        inputs = [{"txid": txid_nw, "vout": nA}]
++        outputs = {self.nodes[0].getnewaddress(): Decimal("0.99")}
++        unsigned = self.nodes[1].createrawtransaction(inputs, outputs)
++        signed = self.nodes[1].signrawtransaction(unsigned)
++
++        txid_w = self.nodes[1].decoderawtransaction(signed['hex'])["txid"]
++        self.nodes[0].whitelist(txid_w)
++        self.nodes[1].sendrawtransaction(signed['hex'])
++        self.sync_all()
++
++        assert(self.nodes[1].getmempoolinfo()['bytes'] > 0)
++        assert(self.nodes[0].getmempoolinfo()['bytes'] > 0)
++
++
++if __name__ == '__main__':
++    WhitelistTest().main()
+diff -duNr bitcoin-core.old/src/policy/policy.cpp bitcoin-core/src/policy/policy.cpp
+--- bitcoin-core.old/src/policy/policy.cpp	2017-10-31 18:10:14.271716201 +0000
++++ bitcoin-core/src/policy/policy.cpp	2017-10-31 18:10:14.271716201 +0000
+@@ -11,8 +11,14 @@
+ #include "tinyformat.h"
+ #include "util.h"
+ #include "utilstrencodings.h"
++#include "uint256.h"
+ 
+ #include <boost/foreach.hpp>
++#include <set>
++
++std::set<uint256> transaction_whitelist;
++CCriticalSection cs_whitelist;
++
+ 
+     /**
+      * Check transaction inputs to mitigate two
+@@ -58,6 +64,13 @@
+ 
+ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnessEnabled)
+ {
++    {
++        LOCK(cs_whitelist);
++        if (! transaction_whitelist.count(tx.GetHash())) {
++            reason = "not-whitelisted";
++            return false;
++        }
++    }
+     if (tx.nVersion > CTransaction::MAX_STANDARD_VERSION || tx.nVersion < 1) {
+         reason = "version";
+         return false;
+diff -duNr bitcoin-core.old/src/rpc/blockchain.cpp bitcoin-core/src/rpc/blockchain.cpp
+--- bitcoin-core.old/src/rpc/blockchain.cpp	2017-10-31 18:10:14.271716201 +0000
++++ bitcoin-core/src/rpc/blockchain.cpp	2017-10-31 18:10:14.271716201 +0000
+@@ -28,6 +28,8 @@
+ 
+ #include <mutex>
+ #include <condition_variable>
++#include <set>
++
+ using namespace std;
+ 
+ struct CUpdatedBlock
+@@ -603,6 +605,25 @@
+     return info;
+ }
+ 
++extern std::set<uint256> transaction_whitelist;
++extern CCriticalSection cs_whitelist;
++
++UniValue whitelist(const JSONRPCRequest& request)
++{
++    if (request.fHelp || request.params.size() != 1) {
++        throw runtime_error(
++            "whitelist txid\n"
++            "\nWhite list txid for acceptance into mempool\n"
++            "\nArguments:\n"
++            "1. \"txid\"                   (string, required) The transaction id\n"
++        );
++    }
++    uint256 hash = ParseHashV(request.params[0], "parameter 1");
++    LOCK(cs_whitelist);
++    transaction_whitelist.insert(hash);
++    return true;
++}
++
+ UniValue getblockhash(const JSONRPCRequest& request)
+ {
+     if (request.fHelp || request.params.size() != 1)
+@@ -1429,6 +1450,7 @@
+     { "blockchain",         "getmempoolancestors",    &getmempoolancestors,    true,  {"txid","verbose"} },
+     { "blockchain",         "getmempooldescendants",  &getmempooldescendants,  true,  {"txid","verbose"} },
+     { "blockchain",         "getmempoolentry",        &getmempoolentry,        true,  {"txid"} },
++    { "blockchain",         "whitelist",              &whitelist,              true,  {"txid"} },
+     { "blockchain",         "getmempoolinfo",         &getmempoolinfo,         true,  {} },
+     { "blockchain",         "getrawmempool",          &getrawmempool,          true,  {"verbose"} },
+     { "blockchain",         "gettxout",               &gettxout,               true,  {"txid","n","include_mempool"} },
