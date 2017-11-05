@@ -1,3 +1,4 @@
+import dbm
 from decimal import Decimal
 from chainwatcher import ChainWatcher
 
@@ -9,9 +10,19 @@ class NewChainWatcher(ChainWatcher):
         self.cfg = cfg
         self.start_height = cfg.getint(self.section, "start_height")
         self.min_depth = cfg.getint(self.section, "min_depth")
-        self.blocks_parsed = set()
-        self.allowed = set()
-        self.to_whitelist = set()
+
+        self.blocks_parsed = dbm.open(
+            cfg.get(
+                self.section,
+                "blocks_parsed",
+                fallback="newchain_blocks_parsed"),
+            "c")
+        self.whitelist = dbm.open(
+            cfg.get(self.section, "whitelist", fallback="whitelist"), "c")
+
+        # initialize transactions to inject with all whitelisted ones
+        self.todo_transactions = list(self.whitelist.keys())
+
         super().__init__(self.section)
 
     def parseChain(self):
@@ -41,12 +52,12 @@ class NewChainWatcher(ChainWatcher):
             transactions = block["tx"][1:]
             self.log.debug("Extracting %d txn from block %s.",
                            len(transactions), ptr)
-            self.allowed.update(transactions)
             for txid in transactions:
                 raw = rpc.getrawtransaction(txid)
-                self.to_whitelist.add((txid, raw))
+                self.whitelist[txid] = raw
+                self.todo_transactions.append(txid.encode("ascii"))
 
-            self.blocks_parsed.add(ptr)
+            self.blocks_parsed[ptr] = "good"
             if "previousblockhash" not in block:
                 self.log.debug("No previous block.")
                 return

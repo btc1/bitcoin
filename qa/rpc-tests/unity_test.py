@@ -22,6 +22,7 @@ rpcport={legacy_rpcport}
 rpchost=127.0.0.1
 start_height=211
 require_coinbase_zeroed={no_reward}
+blocks_parsed={legacy_blocks_parsed_file}
 
 [new]
 rpcuser={new_rpcuser}
@@ -30,6 +31,8 @@ rpcport={new_rpcport}
 rpchost=127.0.0.1
 start_height=211
 min_depth=5
+whitelist={whitelist_file}
+blocks_parsed={new_blocks_parsed_file}
 
 [activation]
 rpcuser={legacy_rpcuser}
@@ -119,7 +122,16 @@ class UnityTest(BitcoinTestFramework):
             "activation_method": "signalling",
             "log_file": os.path.join(
                 self.unity_dir,
-                "debug.log")}
+                "debug.log"),
+            "whitelist_file": os.path.join(
+                self.unity_dir,
+                "whitelist"),
+            "legacy_blocks_parsed_file": os.path.join(
+                self.unity_dir,
+                "legacy_blocks_parsed"),
+            "new_blocks_parsed_file": os.path.join(
+                self.unity_dir,
+                "new_blocks_parsed")}
 
         print("unity log file", self.unity_ini_opts["log_file"])
         os.mkdir(self.unity_dir)
@@ -269,6 +281,7 @@ class UnityTest(BitcoinTestFramework):
         assert(len(block["tx"]) == 2)
         txe = block["tx"][1]
         assert(txe == txid1)
+
 
 if __name__ == '__main__':
     UnityTest().main()

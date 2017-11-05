@@ -23,7 +23,8 @@ def unityEnforcement(awatch, nwatch, lwatch):
                 lwatch.invalidate(vb["hash"])
             else:
                 break
-        lwatch.whitelist()
+        lwatch.inject()
+
 
 last = 0
 if __name__ == "__main__":
