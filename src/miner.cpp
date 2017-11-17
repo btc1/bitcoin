@@ -75,6 +75,8 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
 BlockAssembler::BlockAssembler(const CChainParams& _chainparams)
     : chainparams(_chainparams)
 {
+    fWitnessSeasoned = true;
+
     // Block resource limits
     // If neither -blockmaxsize or -blockmaxweight is given, limit to DEFAULT_BLOCK_MAX_*
     // If only one is given, only restrict the specified resource.
@@ -118,7 +120,7 @@ void BlockAssembler::resetBlock()
     nBlockWeight = 4000;
     nBlockSigOpsCost = 400;
     fIncludeWitness = false;
-    fWitnessSeasoned = false;
+    fWitnessSeasoned = true;
 
     // These counters do not include coinbase tx
     nBlockTx = 0;
